@@ -1,0 +1,9 @@
+services:
+  tic-tac-toe:
+    build: .
+    image: ghcr.io/worgho2/tic-tac-toe-mcp-game:local
+    environment:
+      PORT: 8765
+    ports:
+      - '${PORT:-8765}:8765'
+    restart: unless-stopped

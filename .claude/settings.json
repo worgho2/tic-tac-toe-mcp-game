@@ -1,0 +1,13 @@
+{
+  "enabledPlugins": {
+    "mcp-apps@mcp-apps": true
+  },
+  "extraKnownMarketplaces": {
+    "mcp-apps": {
+      "source": {
+        "source": "github",
+        "repo": "modelcontextprotocol/ext-apps"
+      }
+    }
+  }
+}
