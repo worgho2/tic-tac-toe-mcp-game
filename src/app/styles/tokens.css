@@ -34,16 +34,16 @@
 }
 
 :root[data-theme='dark'] {
-  --fg: #f6efe0;
-  --muted: #cdd6e2;
-  --accent: #ff8a7f;
-  --focus: #ffd166;
-  --cell-x: #ffb3ac;
-  --cell-o: #8fd0ff;
-  --toast-fg: #f6efe0;
+  --fg: #ffffff;
+  --muted: #fbfcfe;
+  --accent: #ffb3ac;
+  --focus: #ffe08a;
+  --cell-x: #ffc9c4;
+  --cell-o: #a8dcff;
+  --toast-fg: #ffffff;
   --shadow: rgba(0, 0, 0, 0.6);
   --btn-primary-fg: #2c3340;
-  --btn-secondary-fg: #f0e6d2;
+  --btn-secondary-fg: #ffffff;
   --tile-panel: url('../assets/kenney/tile_0003.png');
   --tile-card: url('../assets/kenney/tile_0016.png');
   --tile-btn-primary: url('../assets/kenney/tile_0002.png');

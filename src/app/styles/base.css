@@ -45,6 +45,12 @@ h3 {
   margin-top: 8px;
 }
 
+:root[data-theme='dark'] .error {
+  display: inline-block;
+  padding: 2px 4px;
+  background: rgba(0, 0, 0, 0.45);
+}
+
 /* ---- 9-slice surfaces. Slice 8 of a 32px tile; 16px border = 2x, 8px = 1x. ---- */
 
 .panel,
