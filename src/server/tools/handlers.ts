@@ -19,54 +19,66 @@ function reply(data: object): ToolReply {
   };
 }
 
+/** Heartbeat for the caller, then advance every time-based transition before the mutation runs. */
+function tick(lobby: Lobby, playerId: string): void {
+  lobby.touch(playerId);
+  lobby.sweep();
+}
+
 /** view for `playerId` with the mutation's error (if any) merged in. */
 function viewWithError(lobby: Lobby, playerId: string, error: string | null): ToolReply {
   return reply({ ...lobby.viewFor(playerId), error });
 }
 
 export function handleJoin(lobby: Lobby): ToolReply {
+  lobby.sweep();
   const playerId = lobby.connect();
   return reply({ playerId, view: lobby.viewFor(playerId) });
 }
 
 export function handleSetName(lobby: Lobby, args: { playerId: string; name: string }): ToolReply {
-  lobby.touch(args.playerId);
+  tick(lobby, args.playerId);
   const error = lobby.register(args.playerId, args.name);
   return viewWithError(lobby, args.playerId, error);
 }
 
 export function handleGetState(lobby: Lobby, args: { playerId: string }): ToolReply {
-  lobby.touch(args.playerId);
-  lobby.sweep();
+  tick(lobby, args.playerId);
   return reply(lobby.viewFor(args.playerId));
 }
 
 export function handleInvite(lobby: Lobby, args: { playerId: string; targetId: string }): ToolReply {
-  lobby.touch(args.playerId);
+  tick(lobby, args.playerId);
   const error = lobby.invite(args.playerId, args.targetId);
   return viewWithError(lobby, args.playerId, error);
 }
 
 export function handleAcceptInvite(lobby: Lobby, args: { playerId: string; inviteId: string }): ToolReply {
-  lobby.touch(args.playerId);
+  tick(lobby, args.playerId);
   const error = lobby.acceptInvite(args.playerId, args.inviteId);
   return viewWithError(lobby, args.playerId, error);
 }
 
 export function handleDeclineInvite(lobby: Lobby, args: { playerId: string; inviteId: string }): ToolReply {
-  lobby.touch(args.playerId);
+  tick(lobby, args.playerId);
   const error = lobby.declineInvite(args.playerId, args.inviteId);
   return viewWithError(lobby, args.playerId, error);
 }
 
+export function handleCancelInvite(lobby: Lobby, args: { playerId: string; inviteId: string }): ToolReply {
+  tick(lobby, args.playerId);
+  const error = lobby.cancelInvite(args.playerId, args.inviteId);
+  return viewWithError(lobby, args.playerId, error);
+}
+
 export function handleMove(lobby: Lobby, args: { playerId: string; cell: number }): ToolReply {
-  lobby.touch(args.playerId);
+  tick(lobby, args.playerId);
   const error = lobby.makeMove(args.playerId, args.cell);
   return viewWithError(lobby, args.playerId, error);
 }
 
 export function handleLeave(lobby: Lobby, args: { playerId: string }): ToolReply {
-  lobby.touch(args.playerId);
+  tick(lobby, args.playerId);
   const error = lobby.leave(args.playerId);
   return viewWithError(lobby, args.playerId, error);
 }
