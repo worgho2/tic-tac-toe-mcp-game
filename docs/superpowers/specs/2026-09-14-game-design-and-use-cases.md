@@ -45,7 +45,7 @@ Actors: **Player** (a human using the widget inside an AI chat client), **Host**
 
 1. The Player clicks an idle player's card or its "Invite" button.
 2. A modal asks "Invite `<handle>` to a match?" with Confirm and Cancel.
-3. On Confirm the Server creates an invite (60 s TTL). It appears under "Sent" with a countdown and a Cancel button.
+3. On Confirm the Server creates an invite (60 s TTL). It appears under "Sent" with a countdown and a Cancel button. The countdown runs locally from `expiresIn` and resyncs on every poll, so client and server clock skew does not matter.
 4. Errors: target busy, target gone, duplicate pending invite. Shown as an error toast.
 
 ### UC4 Receive and answer an invite
@@ -80,7 +80,7 @@ export const REMATCH_DELAY_MS = 3_000;
 
 export interface PublicPlayer { id: PlayerId; name: string; tag: string; status: 'idle' | 'busy' }
 
-export interface InviteView { inviteId: string; name: string; tag: string; expiresAt: number }
+export interface InviteView { inviteId: string; name: string; tag: string; expiresIn: number } // ms left, computed at view time
 
 export interface GameView {
   round: number;            // 1-based, increments on every automatic rematch
@@ -119,22 +119,22 @@ Internal: `Invite` gains `createdAt`; `Game` becomes `Match` with `round`, `scor
 
 - Constructor gains an injectable `genTag: () => string` (default: 4 random digits) alongside `genId` and `clock`.
 - `register(id, name)`: assigns a tag, retrying while another registered player has the same `name#tag`.
-- `invite(from, to)`: rejects self, unregistered, busy, duplicate pending pair. Stores `createdAt`.
+- `invite(from, to)`: rejects self, unregistered, busy, duplicate pending pair. Stores `createdAt`. Mutual invites (A→B and B→A both pending) are allowed; accepting either starts the match and the auto-cancel step removes the other.
 - `cancelInvite(by, inviteId)`: only the sender; pushes `invite-cancelled/by-sender` to the receiver.
 - `acceptInvite(by, inviteId)`: deletes the invite; if the sender is busy returns "`<handle>` is in another match"; otherwise creates the match, then removes all other invites of both players, pushing `invite-cancelled/in-match` to each counter-party.
-- `sweep()`: presence removal as today, plus invite expiry (push `invite-expired` to the sender), plus rematch: every match with `endedAt !== null` and `clock() - endedAt >= REMATCH_DELAY_MS` gets `round + 1`, swapped marks, empty board, `turn = 'X'`, `over = false`, `endedAt = null`. `viewFor` also runs the rematch check so a single client polling still advances.
+- `sweep()`: presence removal as today, plus invite expiry (push `invite-expired` to the sender), plus rematch: every match with `endedAt !== null` and `clock() - endedAt >= REMATCH_DELAY_MS` gets `round + 1`, swapped marks, empty board, `turn = 'X'`, `over = false`, `endedAt = null`. `viewFor` stays a pure snapshot (apart from draining `events`); instead every handler calls `sweep()` after `touch()` and before its mutation, so time-based transitions advance on any tool call.
 - `makeMove`: on a terminal result sets `over`, `result`, `endedAt`, and increments the winner's score.
 - `leave(id)`: ends the match for both regardless of `over`; the opponent gets `opponent-left` and `gameId = null`.
-- `viewFor(id)`: fills `onlineCount`, `invites` (both directions, excluding expired), `events` (drained), `game`.
+- `viewFor(id)`: fills `onlineCount`, `invites` (both directions, with `expiresIn`), `events` (drained), `game`.
 
 ### Tools
 
-`join_game` unchanged (model-visible, links the `ui://` resource). App-only tools, all following the existing `touch → mutate → viewFor + error` handler shape:
+`join_game` unchanged (model-visible, links the `ui://` resource). App-only tools, all following the handler shape `touch → sweep → mutate → viewFor + error`:
 
 | Tool | Args | Mutation |
 |---|---|---|
 | `set_name` | `{ playerId, name }` | `register` |
-| `get_state` | `{ playerId }` | `sweep` only |
+| `get_state` | `{ playerId }` | none |
 | `invite` | `{ playerId, targetId }` | `invite` |
 | `accept_invite` | `{ playerId, inviteId }` | `acceptInvite` |
 | `decline_invite` | `{ playerId, inviteId }` | `declineInvite` |
@@ -183,12 +183,12 @@ The widget reports its content height to the host through the ext-apps size noti
 - Two palettes mapped to the host theme via the existing `data-theme`: light → beige panels, brown buttons, red ribbons; dark → grey/blue panels, blue buttons, red ribbons.
 - Button states: default tile, pressed tile (Kenney ships both), disabled at 50% opacity.
 - Font: Press Start 2P at 10px/12px/16px sizes; line-height 1.6 for readability.
-- Vite: `build.assetsInlineLimit` raised so every PNG and the woff2 inline as data URIs. No external URLs in the bundle, so no `_meta.ui.csp` changes.
+- Vite: `vite-plugin-singlefile` already forces `assetsInlineLimit` to always inline, so imported PNGs and the woff2 become data URIs with no config change. No external URLs in the bundle, so no `_meta.ui.csp` changes.
 - Credits: Kenney (CC0) and the font (OFL) in `CONTRIBUTING.md` and in the asset folders' license files.
 
 ## Storybook
 
-- Storybook 10, `@storybook/react-vite`, `.storybook/main.ts` with `stories: ['../src/app/**/*.stories.tsx']`; it reuses `@vitejs/plugin-react` but not `vite-plugin-singlefile`.
+- Storybook 10, `@storybook/react-vite`, `.storybook/main.ts` with `stories: ['../src/app/**/*.stories.tsx']`. The builder loads the root `vite.config.ts` by default, so `viteFinal` removes the `vite-plugin-singlefile` plugin by name and drops `build.rollupOptions.input`; `@vitejs/plugin-react` is kept.
 - Stories: every primitive (all variants and states); Join (empty, with error, 0 and many online); Lobby (empty, many players, with received and sent invites, confirm modal open, 400px viewport); Game (your turn, opponent's turn, win, loss, draw, mid-rematch); both themes via a global toolbar toggle that sets `data-theme`.
 - Scripts: `storybook` (`storybook dev -p 6006`), `build-storybook`. Output `storybook-static/` git-ignored, excluded from Biome, `tsconfig.server.json`, and the Docker image.
 - CI: a `build-storybook` job on pull requests.
@@ -212,7 +212,7 @@ The widget reports its content height to the host through the ext-apps size noti
 
 Three pull requests, each green on lint, typecheck, test, build:
 
-1. Server model and tools (this spec's "Server model" section, tests, `CLAUDE.md` tool table).
+1. Server model and tools (this spec's "Server model" section, tests, `CLAUDE.md` tool table). Because the root `tsconfig.json` typechecks both trees, this PR also includes the minimal widget adaptation to the new `PlayerView` (plain lists for `invites`, banners for `events`, a `cancel_invite` call) so typecheck and build stay green; the reskin waits for PR 2.
 2. Widget: primitives, assets, screens, animations, widget tests.
 3. Storybook, CI job, docs and screenshots.
 
