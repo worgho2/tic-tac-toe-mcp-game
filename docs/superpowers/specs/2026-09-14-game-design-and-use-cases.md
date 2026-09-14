@@ -193,7 +193,7 @@ ext-apps' `useApp` enables `autoResize` by default, so the widget's content heig
 - Stories: every primitive (all variants and states); Join (empty, with error, 0 and many online); Lobby (empty, many players, with received and sent invites, confirm modal open, 320px "Small mobile" viewport); Game (your turn, opponent's turn, win, loss, draw, mid-rematch); both themes via a global toolbar toggle that sets `data-theme`.
 - Scripts: `storybook` (`storybook dev -p 6006`), `build-storybook`.
 - Output `storybook-static/` git-ignored, excluded from Biome and the Docker image (`tsconfig.server.json` only includes `src/server`).
-- CI: a `build-storybook` job on pull requests.
+- CI: a `storybook` job ("CI Storybook Build Gate") on pull requests that runs `pnpm build-storybook`.
 
 ## Testing
 
