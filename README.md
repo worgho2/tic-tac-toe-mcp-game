@@ -64,7 +64,7 @@ sequenceDiagram
 - **A widget in a sandbox.** The board is a single self-contained HTML file served by the server as a `ui://` resource. The host renders it in a sandboxed iframe and relays messages between the widget and the server.
 - **Seven tools the widget uses.** Setting a name, inviting, accepting, moving and leaving are tools too, but they are marked *app-only*, so the assistant never sees them and cannot play on your behalf.
 - **Polling, not push.** MCP Apps has no server-to-widget push channel yet, so the widget asks for the latest state every 1.5 seconds. That is why an opponent's move takes a moment to appear.
-- **Nothing is stored.** The lobby lives in memory on a single server. Players who go quiet for 10 seconds are dropped, and a finished game is forgotten once both players leave.
+- **Nothing is stored.** The lobby lives in memory on a single server. Players who go quiet for 30 seconds are dropped (a reload just asks for your name again), and a finished game is forgotten once both players leave.
 
 ## Run it yourself
 
