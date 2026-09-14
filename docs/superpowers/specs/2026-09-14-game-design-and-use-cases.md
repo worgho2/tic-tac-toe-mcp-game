@@ -162,7 +162,7 @@ src/app/
   styles/                 tokens.css (palette per theme), base.css, animations.css
 ```
 
-Screens and primitives are pure: props in, callbacks out, no ext-apps imports. Only `App.tsx` and `hooks/usePollView.ts` know about the host.
+Screens and primitives are pure: props in, callbacks out, no ext-apps imports. The host boundary is `App.tsx` (`useApp`), `lib/tools.ts` (`callTool` wraps `app.callServerTool`) and the hooks `usePollView` and `useHostTheme`.
 
 ### Screens
 
