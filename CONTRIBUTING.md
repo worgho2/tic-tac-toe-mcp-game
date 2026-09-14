@@ -19,12 +19,27 @@ This also installs the git hooks via [Lefthook](https://lefthook.dev/).
 ```
 mcp-app.html         Vite entry for the widget
 src/app/             React widget rendered inside the chat (useApp from @modelcontextprotocol/ext-apps/react)
+src/app/ui/          9-slice primitives (Panel, Button, Modal, Toast, ...)
+src/app/screens/     Pages (Join, Lobby, Game)
+src/app/styles/      Tokens (palette per theme), base styles, animations
+src/app/assets/      Kenney tiles and the Press Start 2P font
 src/server/main.ts   Express + Streamable HTTP transport (or --stdio)
 src/server/server.ts createServer(): tools + the ui:// resource
 src/server/game/     Pure tic-tac-toe rules
 src/server/lobby/    In-memory lobby: players, invites, games, presence
 src/server/tools/    Pure tool handlers returning PlayerView snapshots
 ```
+
+## Assets and credits
+
+- UI tiles: [Kenney "UI Pack - Pixel Adventure"](https://kenney.nl/assets/ui-pack-pixel-adventure) (CC0). Only the tiles the widget uses are committed under `src/app/assets/kenney/` with Kenney's `License.txt`. To add one, copy it from `Tiles/Large tiles/Thick outline/` of the pack, add a `--tile-<role>` custom property in `src/app/styles/tokens.css` (both themes), and use it as `border-image-source`.
+- Font: [Press Start 2P](https://fonts.google.com/specimen/Press+Start+2P) (SIL OFL 1.1), `src/app/assets/fonts/`.
+
+All assets are inlined into `dist/mcp-app.html`; the widget must not reference external URLs (MCP hosts sandbox it with a CSP).
+
+## Widget tests
+
+`pnpm test` runs two Vitest projects. Widget tests (`src/app/**/*.test.{ts,tsx}`) run in jsdom with Testing Library; render screens from the fixtures in `src/app/fixtures/views.ts`, query by role or label, and drive them with `@testing-library/user-event`. Run just that project with `pnpm vitest run --project app`.
 
 ## Scripts
 

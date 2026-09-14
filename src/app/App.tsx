@@ -1,33 +1,27 @@
 import { useApp } from '@modelcontextprotocol/ext-apps/react';
 import { useCallback, useEffect, useState } from 'react';
 import pkg from '../../package.json';
-import { GameBoard } from './components/GameBoard';
-import { LobbyScreen } from './components/LobbyScreen';
-import { NameScreen } from './components/NameScreen';
 import { useHostTheme } from './hooks/useHostTheme';
 import { usePollView } from './hooks/usePollView';
+import { useToasts } from './hooks/useToasts';
 import { eventText } from './lib/events';
 import { callTool, isJoinResult, isPlayerView, type PlayerView, parseTextBlock, type ToolName } from './lib/tools';
+import { GameScreen } from './screens/GameScreen';
+import { JoinScreen } from './screens/JoinScreen';
+import { LobbyScreen } from './screens/LobbyScreen';
+import { ToastStack } from './ui/Toast';
 
-const BANNER_MS = 4000;
-
-interface Banner {
-  id: number;
-  text: string;
+/** An error that only restates an event delivered in the same reply (the opponent left, so the move failed). */
+export function redundantError(view: PlayerView): boolean {
+  return view.error === 'not in a game' && view.events.some((event) => event.type === 'opponent-left');
 }
 
 export function TicTacToeApp() {
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [view, setView] = useState<PlayerView | null>(null);
-  const [banners, setBanners] = useState<Banner[]>([]);
   const [theme, setTheme] = useState<string | undefined>(undefined);
   const [tornDown, setTornDown] = useState(false);
-
-  const showBanner = useCallback((text: string) => {
-    const id = Date.now() + Math.random();
-    setBanners((current) => [...current, { id, text }]);
-    window.setTimeout(() => setBanners((current) => current.filter((banner) => banner.id !== id)), BANNER_MS);
-  }, []);
+  const { toasts, push, dismiss } = useToasts();
 
   // Every tool reply is either the join result ({ playerId, view }) or a bare PlayerView.
   const ingest = useCallback(
@@ -41,11 +35,11 @@ export function TicTacToeApp() {
       }
       if (!next) return;
       setView(next);
-      for (const event of next.events) showBanner(eventText(event));
-      // The name screen renders its error inline; everywhere else it is a banner.
-      if (next.error && next.phase !== 'name') showBanner(next.error);
+      for (const event of next.events) push(eventText(event));
+      // The join screen renders its error inline; everywhere else it is a toast.
+      if (next.error && next.phase !== 'name' && !redundantError(next)) push(next.error);
     },
-    [showBanner],
+    [push],
   );
 
   const { app, error } = useApp({
@@ -84,7 +78,7 @@ export function TicTacToeApp() {
 
   if (error) {
     return (
-      <p className="banner">
+      <p className="error">
         <strong>Error:</strong> {error.message}
       </p>
     );
@@ -94,17 +88,16 @@ export function TicTacToeApp() {
 
   return (
     <main>
-      {banners.map((banner) => (
-        <div className="banner" key={banner.id}>
-          {banner.text}
-        </div>
-      ))}
+      <ToastStack toasts={toasts} onDismiss={dismiss} />
       {view.phase === 'name' && (
-        <NameScreen onlineCount={view.onlineCount} error={view.error} onSubmit={(name) => call('set_name', { name })} />
+        <JoinScreen onlineCount={view.onlineCount} error={view.error} onSubmit={(name) => call('set_name', { name })} />
       )}
       {view.phase === 'lobby' && (
         <LobbyScreen
-          view={view}
+          you={view.you}
+          onlineCount={view.onlineCount}
+          players={view.players}
+          invites={view.invites}
           onInvite={(targetId) => call('invite', { targetId })}
           onAccept={(inviteId) => call('accept_invite', { inviteId })}
           onDecline={(inviteId) => call('decline_invite', { inviteId })}
@@ -112,7 +105,7 @@ export function TicTacToeApp() {
         />
       )}
       {view.phase === 'game' && view.game && (
-        <GameBoard
+        <GameScreen
           you={view.you}
           game={view.game}
           onMove={(cell) => call('make_move', { cell })}

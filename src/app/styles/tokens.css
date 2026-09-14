@@ -1,0 +1,56 @@
+/* Palette and tile selection per host theme. Tiles are Kenney "UI Pack - Pixel Adventure" (CC0), 32x32. */
+:root {
+  --font: 'Press Start 2P', 'Courier New', monospace;
+  --fg: #3a2a1a;
+  --muted: #7d6b58;
+  --accent: #c73e36;
+  --focus: #b3261e;
+  --cell-x: #c73e36;
+  --cell-o: #2a6fae;
+  --ribbon-fg: #fff6e0;
+  --input-fg: #2c3340;
+  --badge-fg: #2c3340;
+  --toast-fg: #2c3340;
+  --shadow: rgba(0, 0, 0, 0.35);
+  --btn-primary-fg: #fff6e0;
+  --btn-secondary-fg: #2c3340;
+  --btn-danger-fg: #2c3340;
+  --tile-panel: url('../assets/kenney/tile_0000.png');
+  --tile-card: url('../assets/kenney/tile_0013.png');
+  --tile-btn-primary: url('../assets/kenney/tile_0001.png');
+  --tile-btn-primary-pressed: url('../assets/kenney/tile_0014.png');
+  --tile-btn-secondary: url('../assets/kenney/tile_0002.png');
+  --tile-btn-secondary-pressed: url('../assets/kenney/tile_0015.png');
+  --tile-btn-danger: url('../assets/kenney/tile_0069.png');
+  --tile-input: url('../assets/kenney/tile_0002.png');
+  --tile-cell: url('../assets/kenney/tile_0000.png');
+  --tile-cell-hover: url('../assets/kenney/tile_0007.png');
+  --tile-badge-idle: url('../assets/kenney/tile_0034.png');
+  --tile-badge-busy: url('../assets/kenney/tile_0033.png');
+  --tile-toast: url('../assets/kenney/tile_0002.png');
+  --tile-ribbon-l: url('../assets/kenney/tile_0043.png');
+  --tile-ribbon-m: url('../assets/kenney/tile_0044.png');
+  --tile-ribbon-r: url('../assets/kenney/tile_0045.png');
+}
+
+:root[data-theme='dark'] {
+  --fg: #ffffff;
+  --muted: #fbfcfe;
+  --accent: #ffb3ac;
+  --focus: #ffe08a;
+  --cell-x: #ffc9c4;
+  --cell-o: #a8dcff;
+  --toast-fg: #ffffff;
+  --shadow: rgba(0, 0, 0, 0.6);
+  --btn-primary-fg: #2c3340;
+  --btn-secondary-fg: #ffffff;
+  --tile-panel: url('../assets/kenney/tile_0003.png');
+  --tile-card: url('../assets/kenney/tile_0016.png');
+  --tile-btn-primary: url('../assets/kenney/tile_0002.png');
+  --tile-btn-primary-pressed: url('../assets/kenney/tile_0015.png');
+  --tile-btn-secondary: url('../assets/kenney/tile_0008.png');
+  --tile-btn-secondary-pressed: url('../assets/kenney/tile_0009.png');
+  --tile-cell: url('../assets/kenney/tile_0003.png');
+  --tile-cell-hover: url('../assets/kenney/tile_0009.png');
+  --tile-toast: url('../assets/kenney/tile_0003.png');
+}
