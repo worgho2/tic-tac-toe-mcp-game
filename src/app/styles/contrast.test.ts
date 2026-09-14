@@ -43,7 +43,16 @@ const light = tokens(css, 'light');
 const dark = { ...light, ...tokens(css, 'dark') };
 
 // WCAG 2.1 AA: 4.5:1 for text, 3:1 for large text, UI components and focus indicators.
+// "primary button text" and "ribbon text" below are normal-size text held to the 3:1 level, not 4.5:1:
+// they sit on decorative pixel-art surfaces (the brown and ribbon tile fills), and the tile fill caps the
+// achievable ratio (white on the ribbon fill caps at 3.32:1), so they are held to the 3:1 large-text/UI-component
+// level instead.
 describe('theme contrast (tokens.css against the Kenney tile fills)', () => {
+  it('parses more than a handful of tokens from each theme block', () => {
+    expect(Object.keys(light).length).toBeGreaterThan(10);
+    expect(Object.keys(dark).length).toBeGreaterThan(10);
+  });
+
   it.each([
     ['fg', light.fg, FILLS.panelLight, 4.5],
     ['muted', light.muted, FILLS.panelLight, 4.5],
@@ -57,6 +66,7 @@ describe('theme contrast (tokens.css against the Kenney tile fills)', () => {
     ['secondary button text', light['btn-secondary-fg'], FILLS.greyBlue, 4.5],
     ['primary button text', light['btn-primary-fg'], FILLS.brown, 3],
     ['ribbon text', light['ribbon-fg'], FILLS.ribbon, 3],
+    ['danger button text', light['btn-danger-fg'], FILLS.greyBlue, 4.5],
   ])('light: %s', (_name, color, fill, min) => {
     expect(contrast(color, fill)).toBeGreaterThanOrEqual(min);
   });

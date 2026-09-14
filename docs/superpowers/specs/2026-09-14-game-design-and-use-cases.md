@@ -202,7 +202,7 @@ ext-apps' `useApp` enables `autoResize` by default, so the widget's content heig
 - `server.test.ts`: eight app-only tools with `visibility: ['app']`; `join_game` payload matches the new shape.
 - Widget: Vitest gets a second project (`src/app/**/*.test.{ts,tsx}`, `jsdom`, Testing Library) for the search filter, countdown, overlay-per-round latch and screen rendering from fixture views. Fixtures are shared with the stories.
 - Manual: two clients through the ext-apps `basic-host`, covering UC1–UC6.
-- `src/app/styles/contrast.test.ts`: WCAG AA contrast of every text/mark token against the sampled Kenney tile fills, both themes.
+- `src/app/styles/contrast.test.ts`: WCAG AA contrast of every text/mark token against the sampled Kenney tile fills, both themes. Two rows ("primary button text", "ribbon text") sit on decorative pixel-art surfaces whose tile fill caps the achievable ratio, so they are held to the 3:1 large-text/UI-component level instead of 4.5:1.
 
 ## Docs
 
