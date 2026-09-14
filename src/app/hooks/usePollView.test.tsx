@@ -27,6 +27,34 @@ describe('usePollView', () => {
     expect(onView).toHaveBeenLastCalledWith(view);
   });
 
+  it('polls again when the tab becomes visible, not when it is hidden, and unsubscribes on unmount', async () => {
+    const callServerTool = vi.fn().mockResolvedValue({ structuredContent: { phase: 'lobby' } });
+    const app = { callServerTool } as unknown as App;
+    let visibility: DocumentVisibilityState = 'visible';
+    const spy = vi.spyOn(document, 'visibilityState', 'get').mockImplementation(() => visibility);
+    const { unmount } = renderHook(() => usePollView(app, 'me', vi.fn(), 1000));
+    expect(callServerTool).toHaveBeenCalledTimes(1);
+
+    visibility = 'hidden';
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(callServerTool).toHaveBeenCalledTimes(1);
+
+    visibility = 'visible';
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(callServerTool).toHaveBeenCalledTimes(2);
+
+    unmount();
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(callServerTool).toHaveBeenCalledTimes(2);
+    spy.mockRestore();
+  });
+
   it('does nothing without a player id and stops on unmount', async () => {
     const callServerTool = vi.fn().mockResolvedValue({ structuredContent: {} });
     const app = { callServerTool } as unknown as App;
