@@ -156,8 +156,9 @@ src/app/
   ui/                     Panel, Ribbon, Button, Input, Badge, Modal, Toast, Cell, Overlay
   assets/kenney/          only the tiles used + License.txt
   assets/fonts/           PressStart2P.woff2 + OFL.txt
-  hooks/                  usePollView (kept), useHostTheme (kept), useCountdown, useRoundOverlay
+  hooks/                  usePollView (kept), useHostTheme (kept), useCountdown, useToasts
   lib/tools.ts            adds 'cancel_invite'
+  lib/outcome.ts          roundOutcome(game): 'win' | 'loss' | 'draw' | null
   styles/                 tokens.css (palette per theme), base.css, animations.css
 ```
 
@@ -175,7 +176,7 @@ Screens and primitives are pure: props in, callbacks out, no ext-apps imports. O
 
 ### Sizing and host
 
-The widget reports its content height to the host through the ext-apps size notification after each render (`ResizeObserver` on the root). Content max width 720px, works down to 320px.
+ext-apps' `useApp` enables `autoResize` by default, so the widget's content height reaches the host through `ui/notifications/size-changed` without any code in the widget. Content max width 720px, works down to 320px.
 
 ## Visual system
 
@@ -198,7 +199,7 @@ The widget reports its content height to the host through the ext-apps size noti
 - `lobby.test.ts`: tag assignment and collision retry; invite expiry via injected clock; per-pair uniqueness; cancel; stale accept after the sender entered another match returns "invite not found"; auto-cancel of other invites on match start with events; rematch after 3 s with swapped marks; score on win, unchanged on draw; leave ends match and emits `opponent-left`; events drained once.
 - `handlers.test.ts`: `cancel_invite` handler; reply shape for the new `PlayerView`.
 - `server.test.ts`: eight app-only tools with `visibility: ['app']`; `join_game` payload matches the new shape.
-- Widget: Vitest gets a second project (`src/app/**/*.test.tsx`, `jsdom`, Testing Library) for the search filter, countdown, overlay-per-round latch and screen rendering from fixture views. Fixtures are shared with the stories.
+- Widget: Vitest gets a second project (`src/app/**/*.test.{ts,tsx}`, `jsdom`, Testing Library) for the search filter, countdown, overlay-per-round latch and screen rendering from fixture views. Fixtures are shared with the stories.
 - Manual: two clients through the ext-apps `basic-host`, covering UC1–UC6.
 
 ## Docs
@@ -206,7 +207,7 @@ The widget reports its content height to the host through the ext-apps size noti
 - This spec is the source of truth for game behaviour. The `2026-06-18` specs and plans stay for history only.
 - `CLAUDE.md`: tool table (eight app-only tools), `PlayerView` shape (`invites`, `events`, `onlineCount`), Storybook commands, widget test glob, "Docs: what to trust".
 - `CONTRIBUTING.md`: Storybook section, asset credits, how to add a tile.
-- `README.md`: screenshots from Storybook once the reskin lands.
+- `README.md`: screenshots from Storybook (PR 3).
 
 ## Delivery
 

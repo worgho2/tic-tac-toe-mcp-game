@@ -23,9 +23,10 @@ pnpm only (`packageManager` pin, `engineStrict`), Node 24 (`.nvmrc`). Use `corep
 | `pnpm typecheck` | `tsc --noEmit` over `src`, both server and app |
 | `pnpm lint` / `pnpm lint:fix` | `biome check` (lint + format in one; this is what CI gates on) |
 | `pnpm format` / `pnpm format:check` | Biome formatter only |
-| `pnpm test` / `pnpm test:watch` | Vitest, node environment, `src/**/*.test.ts` only |
+| `pnpm test` / `pnpm test:watch` | Vitest with two projects: server (node, src/server/**/*.test.ts) and app (jsdom + Testing Library, src/app/**/*.test.{ts,tsx}) |
 
 Single test file: `pnpm vitest run src/server/lobby/lobby.test.ts`
+One project only: `pnpm vitest run --project app`
 Single test by name: `pnpm vitest run -t "applyMove rejects an occupied cell"`
 
 Run the server over stdio instead of HTTP: `tsx src/server/main.ts --stdio`. The only env var is `PORT` (default 8765).
@@ -65,11 +66,13 @@ Registered in `server.ts` via `registerAppTool` / `registerAppResource` from `@m
 
 ### Widget
 
-`src/app/App.tsx` uses `useApp` from `@modelcontextprotocol/ext-apps/react` and switches screens on `view.phase` (`name` → `lobby` → `game`). `lib/tools.ts` wraps `callTool`, preferring `structuredContent` and falling back to parsing the text block. `App.tsx` turns every entry of `view.events` and any mutation `error` outside the name phase into a transient banner (4 s); screens receive the view slice and callbacks only.
+`src/app/App.tsx` uses `useApp` from `@modelcontextprotocol/ext-apps/react`, polls, calls tools, and switches screens on `view.phase` (`name` → `screens/JoinScreen`, `lobby` → `screens/LobbyScreen`, `game` → `screens/GameScreen`). Screens and the primitives in `src/app/ui/` are pure (props in, callbacks out) and never import ext-apps; that is what makes them testable in jsdom and renderable in Storybook. `App.tsx` turns every `view.events` entry and any mutation `error` outside the name phase into a toast (`hooks/useToasts`, 4 s, timers cleared on unmount), except a `not in a game` error that arrives together with an `opponent-left` event. `lib/tools.ts` wraps `callTool`, preferring `structuredContent` and falling back to parsing the text block.
 
-**Polling, not push.** MCP Apps has no server→widget push, so `hooks/usePollView.ts` calls `get_state` every `POLL_INTERVAL_MS = 1500`. Keep the poll interval well under the presence TTL.
+**Polling, not push.** MCP Apps has no server→widget push, so `hooks/usePollView.ts` calls `get_state` once immediately and then every `POLL_INTERVAL_MS = 1500`. Keep the poll interval well under the presence TTL. Invite countdowns tick locally from `expiresIn` (`hooks/useCountdown`) and resync on every poll.
 
-Widget tests are not covered by the vitest glob (`.test.ts` only, node environment, no jsdom).
+**Visual system.** Plain CSS in `src/app/styles/`: `tokens.css` holds the palette and one CSS custom property per Kenney tile role, overridden under `:root[data-theme='dark']`; `base.css` styles the primitives as `border-image` 9-slices (`border-image-slice: 8 fill`, 16px borders for panels/cells = 2x, 8px for buttons/inputs/badges = 1x, `image-rendering: pixelated`); `animations.css` holds the round-end overlay (CSS confetti, bobbing 🦆, `prefers-reduced-motion` off switch). Assets live in `src/app/assets/` (17 tiles from Kenney "UI Pack - Pixel Adventure", CC0, plus Press Start 2P, OFL) and are inlined into the single-file bundle by `vite-plugin-singlefile`; never reference an external URL. Host sizing is automatic (`useApp` enables `autoResize`).
+
+Widget tests use Testing Library with `src/app/test-setup.ts` (jest-dom matchers, cleanup) and the fixtures in `src/app/fixtures/views.ts`; the same fixtures feed the Storybook stories.
 
 ## Conventions
 
@@ -79,6 +82,7 @@ Widget tests are not covered by the vitest glob (`.test.ts` only, node environme
 - **pre-commit** runs Biome format on staged files with `stage_fixed`. Do not leave a tracked file with both staged and unstaged edits when committing: if the hook fails, lefthook's stash restore can silently revert the unstaged part. After any hook failure, check `git status` and diff.
 - **CI runs only on pull requests** (`ci.yml`: lint, typecheck, test, build, no-push Docker build). Work goes through PRs.
 - Dockerfile's corepack `pnpm@…` pin must match `packageManager` in `package.json`.
+- Only `App.tsx` and `hooks/usePollView.ts` import from `@modelcontextprotocol/ext-apps`. New screens take a view slice and callbacks.
 
 ## Docs: what to trust
 
