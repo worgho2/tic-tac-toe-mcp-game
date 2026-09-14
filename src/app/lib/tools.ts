@@ -1,6 +1,7 @@
 import type { App } from '@modelcontextprotocol/ext-apps';
 import type { PlayerView } from '../../server/lobby/lobby.js';
 
+export type { Board, Mark } from '../../server/game/game.js';
 export type { GameView, InviteView, LobbyEvent, PlayerView, PublicPlayer } from '../../server/lobby/lobby.js';
 
 /** Reply of `join_game`; every other tool replies with a bare `PlayerView`. */
