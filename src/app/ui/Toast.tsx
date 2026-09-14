@@ -10,7 +10,6 @@ interface Props {
 
 /** Top-right stack of transient messages; each one is a button so a click dismisses it early. */
 export function ToastStack({ toasts, onDismiss }: Props) {
-  if (toasts.length === 0) return null;
   return (
     <div className="toasts" aria-live="polite">
       {toasts.map((toast) => (

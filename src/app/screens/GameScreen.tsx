@@ -23,7 +23,7 @@ function turnLine(game: GameView): string {
 export function GameScreen({ you, game, onMove, onLeave }: Props) {
   const [confirmLeave, setConfirmLeave] = useState(false);
   const outcome = roundOutcome(game);
-  const yourHandle = you.name && you.tag ? handle(you.name, you.tag) : 'you';
+  const yourHandle = you.name && you.tag ? handle(you.name, you.tag) : '';
 
   const leave = () => {
     setConfirmLeave(false);

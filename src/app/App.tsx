@@ -12,7 +12,7 @@ import { LobbyScreen } from './screens/LobbyScreen';
 import { ToastStack } from './ui/Toast';
 
 /** An error that only restates an event delivered in the same reply (the opponent left, so the move failed). */
-function redundantError(view: PlayerView): boolean {
+export function redundantError(view: PlayerView): boolean {
   return view.error === 'not in a game' && view.events.some((event) => event.type === 'opponent-left');
 }
 

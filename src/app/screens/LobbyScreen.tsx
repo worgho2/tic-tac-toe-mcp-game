@@ -78,7 +78,11 @@ export function LobbyScreen({ you, onlineCount, players, invites, onInvite, onAc
                   <span className="card__handle">{handle(player.name, player.tag)}</span>
                   <Badge status={player.status} />
                 </button>
-                <Button disabled={!enabled} onClick={() => setTarget(player)}>
+                <Button
+                  disabled={!enabled}
+                  onClick={() => setTarget(player)}
+                  aria-label={`Invite ${handle(player.name, player.tag)}`}
+                >
                   Invite
                 </Button>
               </li>
@@ -94,8 +98,17 @@ export function LobbyScreen({ you, onlineCount, players, invites, onInvite, onAc
         <ul className="cards">
           {invites.received.map((invite) => (
             <InviteCard invite={invite} key={invite.inviteId}>
-              <Button onClick={() => onAccept(invite.inviteId)}>Accept</Button>
-              <Button variant="danger" onClick={() => onDecline(invite.inviteId)}>
+              <Button
+                onClick={() => onAccept(invite.inviteId)}
+                aria-label={`Accept invite from ${handle(invite.name, invite.tag)}`}
+              >
+                Accept
+              </Button>
+              <Button
+                variant="danger"
+                onClick={() => onDecline(invite.inviteId)}
+                aria-label={`Decline invite from ${handle(invite.name, invite.tag)}`}
+              >
                 Deny
               </Button>
             </InviteCard>
@@ -106,7 +119,11 @@ export function LobbyScreen({ you, onlineCount, players, invites, onInvite, onAc
         <ul className="cards">
           {invites.sent.map((invite) => (
             <InviteCard invite={invite} key={invite.inviteId}>
-              <Button variant="secondary" onClick={() => onCancel(invite.inviteId)}>
+              <Button
+                variant="secondary"
+                onClick={() => onCancel(invite.inviteId)}
+                aria-label={`Cancel invite to ${handle(invite.name, invite.tag)}`}
+              >
                 Cancel
               </Button>
             </InviteCard>

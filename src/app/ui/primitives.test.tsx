@@ -72,14 +72,19 @@ describe('Modal', () => {
     await user.keyboard('{Escape}');
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
+
+  it('focuses the cancel button on open', () => {
+    render(<Modal title="Invite bob#0042 to a match?" confirmLabel="Invite" onConfirm={vi.fn()} onCancel={vi.fn()} />);
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+  });
 });
 
 describe('ToastStack', () => {
   it('renders nothing when empty and dismisses on click', async () => {
     const user = userEvent.setup();
     const onDismiss = vi.fn();
-    const { rerender, container } = render(<ToastStack toasts={[]} onDismiss={onDismiss} />);
-    expect(container).toBeEmptyDOMElement();
+    const { rerender } = render(<ToastStack toasts={[]} onDismiss={onDismiss} />);
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
     rerender(<ToastStack toasts={[{ id: 7, text: 'bob#0042 declined your invite.' }]} onDismiss={onDismiss} />);
     await user.click(screen.getByRole('button', { name: 'bob#0042 declined your invite.' }));
     expect(onDismiss).toHaveBeenCalledWith(7);

@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useId } from 'react';
+import { type ReactNode, useEffect, useId, useRef } from 'react';
 import { Button } from './Button';
 
 interface Props {
@@ -23,6 +23,11 @@ export function Modal({
   onCancel,
 }: Props) {
   const titleId = useId();
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    cancelRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -40,7 +45,7 @@ export function Modal({
         </h2>
         {children}
         <div className="modal__actions">
-          <Button variant="secondary" onClick={onCancel}>
+          <Button ref={cancelRef} variant="secondary" onClick={onCancel}>
             {cancelLabel}
           </Button>
           <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm}>
