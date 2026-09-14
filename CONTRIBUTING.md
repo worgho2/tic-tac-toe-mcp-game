@@ -17,17 +17,19 @@ This also installs the git hooks via [Lefthook](https://lefthook.dev/).
 ## Project layout
 
 ```
-mcp-app.html         Vite entry for the widget
-src/app/             React widget rendered inside the chat (useApp from @modelcontextprotocol/ext-apps/react)
-src/app/ui/          9-slice primitives (Panel, Button, Modal, Toast, ...)
-src/app/screens/     Pages (Join, Lobby, Game)
-src/app/styles/      Tokens (palette per theme), base styles, animations
-src/app/assets/      Kenney tiles and the Press Start 2P font
-src/server/main.ts   Express + Streamable HTTP transport (or --stdio)
-src/server/server.ts createServer(): tools + the ui:// resource
-src/server/game/     Pure tic-tac-toe rules
-src/server/lobby/    In-memory lobby: players, invites, games, presence
-src/server/tools/    Pure tool handlers returning PlayerView snapshots
+mcp-app.html             Vite entry for the widget
+.storybook/              Storybook 10 config (@storybook/react-vite)
+src/app/                 React widget rendered inside the chat (useApp from @modelcontextprotocol/ext-apps/react)
+src/app/ui/              9-slice primitives (Panel, Button, Modal, Toast, ...)
+src/app/screens/         Pages (Join, Lobby, Game)
+src/app/styles/          Tokens (palette per theme), base styles, animations
+src/app/assets/          Kenney tiles and the Press Start 2P font
+src/app/**/*.stories.tsx Storybook stories, next to the component/screen they cover
+src/server/main.ts       Express + Streamable HTTP transport (or --stdio)
+src/server/server.ts     createServer(): tools + the ui:// resource
+src/server/game/         Pure tic-tac-toe rules
+src/server/lobby/        In-memory lobby: players, invites, games, presence
+src/server/tools/        Pure tool handlers returning PlayerView snapshots
 ```
 
 ## Assets and credits
@@ -41,6 +43,10 @@ All assets are inlined into `dist/mcp-app.html`; the widget must not reference e
 
 `pnpm test` runs two Vitest projects. Widget tests (`src/app/**/*.test.{ts,tsx}`) run in jsdom with Testing Library; render screens from the fixtures in `src/app/fixtures/views.ts`, query by role or label, and drive them with `@testing-library/user-event`. Run just that project with `pnpm vitest run --project app`.
 
+## Storybook
+
+`pnpm storybook` serves every primitive and screen state at http://localhost:6006 (light/dark toolbar, 320px "Small mobile" viewport on the narrow stories, a11y panel from `@storybook/addon-a11y`). `pnpm build-storybook` writes `storybook-static/`, which CI builds on every pull request. Stories live next to their components as `*.stories.tsx` and reuse `src/app/fixtures/views.ts`; add a story whenever you add a state a reviewer should be able to see without an MCP host.
+
 ## Scripts
 
 | Command | What it does |
@@ -51,6 +57,8 @@ All assets are inlined into `dist/mcp-app.html`; the widget must not reference e
 | `pnpm test` | Runs the vitest suite |
 | `pnpm lint` / `pnpm lint:fix` | Biome format + lint check / auto-fix |
 | `pnpm typecheck` | `tsc --noEmit` over the whole project |
+| `pnpm storybook` | Serves the component/screen stories at http://localhost:6006 |
+| `pnpm build-storybook` | Writes the static Storybook site to `storybook-static/` |
 
 Point an MCP client at `http://localhost:8765/mcp` to try the widget. The [ext-apps basic host](https://github.com/modelcontextprotocol/ext-apps/tree/main/examples/basic-host) is a handy local host for development.
 

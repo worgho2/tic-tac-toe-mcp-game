@@ -50,6 +50,36 @@ jobs:
       - name: Build
         run: pnpm build
 
+  storybook:
+    name: CI Storybook Build Gate
+    runs-on: ubuntu-latest
+    # Release PRs only touch CHANGELOG/version; there is nothing to preview.
+    if: ${{ !startsWith(github.head_ref, 'release-please--') }}
+    env:
+      STORYBOOK_DISABLE_TELEMETRY: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Storybook
+        run: pnpm build-storybook
+
   docker:
     name: CI Docker Build Gate
     runs-on: ubuntu-latest

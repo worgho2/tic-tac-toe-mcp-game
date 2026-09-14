@@ -20,10 +20,11 @@ pnpm only (`packageManager` pin, `engineStrict`), Node 24 (`.nvmrc`). Use `corep
 | `pnpm dev` | Runs `vite build --watch` and `tsx watch src/server/main.ts` concurrently on port 8765 |
 | `pnpm build` | `vite build` (widget → `dist/mcp-app.html`) then `tsc -p tsconfig.server.json` (server → `dist/server`) |
 | `pnpm start` | `node dist/server/main.js` |
-| `pnpm typecheck` | `tsc --noEmit` over `src`, both server and app |
+| `pnpm typecheck` | `tsc --noEmit` over `src`, both server and app, plus `.storybook` |
 | `pnpm lint` / `pnpm lint:fix` | `biome check` (lint + format in one; this is what CI gates on) |
 | `pnpm format` / `pnpm format:check` | Biome formatter only |
 | `pnpm test` / `pnpm test:watch` | Vitest with two projects: server (node, src/server/**/*.test.ts) and app (jsdom + Testing Library, src/app/**/*.test.{ts,tsx}) |
+| `pnpm storybook` / `pnpm build-storybook` | Storybook 10 (`@storybook/react-vite`) on port 6006; static build to `storybook-static/` (git-ignored) |
 
 Single test file: `pnpm vitest run src/server/lobby/lobby.test.ts`
 One project only: `pnpm vitest run --project app`
@@ -72,7 +73,7 @@ Registered in `server.ts` via `registerAppTool` / `registerAppResource` from `@m
 
 **Visual system.** Plain CSS in `src/app/styles/`: `tokens.css` holds the palette and one CSS custom property per Kenney tile role, overridden under `:root[data-theme='dark']`; `base.css` styles the primitives as `border-image` 9-slices (`border-image-slice: 8 fill`, 16px borders for panels/cells = 2x, 8px for buttons/inputs/badges = 1x, `image-rendering: pixelated`); `animations.css` holds the round-end overlay (CSS confetti, bobbing 🦆, `prefers-reduced-motion` off switch). Assets live in `src/app/assets/` (17 tiles from Kenney "UI Pack - Pixel Adventure", CC0, plus Press Start 2P, OFL) and are inlined into the single-file bundle by `vite-plugin-singlefile`; never reference an external URL. Host sizing is automatic (`useApp` enables `autoResize`).
 
-Widget tests use Testing Library with `src/app/test-setup.ts` (jest-dom matchers, cleanup) and the fixtures in `src/app/fixtures/views.ts`; the same fixtures will feed the Storybook stories in PR 3.
+Widget tests use Testing Library with `src/app/test-setup.ts` (jest-dom matchers, cleanup) and the fixtures in `src/app/fixtures/views.ts`; the same fixtures feed the `*.stories.tsx` files next to each component. Storybook lives in `.storybook/` (`main.ts` drops `vite-plugin-singlefile` in `viteFinal`; `preview.tsx` imports the stylesheets and adds the light/dark toolbar). Stories are CSF3 with `Meta`/`StoryObj` from `@storybook/react-vite` and `fn`/`userEvent` from `storybook/test`. `src/app/styles/contrast.test.ts` fails the build if a token drops below WCAG AA against its tile fill (fills sampled from the PNGs and listed in the test).
 
 ## Conventions
 
@@ -80,12 +81,12 @@ Widget tests use Testing Library with `src/app/test-setup.ts` (jest-dom matchers
 - **Split MCP SDK 2.x** packages (`@modelcontextprotocol/server`, `/node`, `/express`, `/client`), not `@modelcontextprotocol/sdk`. zod 4.
 - **Conventional Commits, enforced by commitlint** on `commit-msg`. Allowed types: `feat fix perf revert docs style chore refactor test build ci wip`. release-please derives version and changelog from them, so `feat` and `fix` have release consequences. Keep `commitlint.config.mjs` `type-enum` in sync with `changelog-sections` in `release-please-config.json`.
 - **pre-commit** runs Biome format on staged files with `stage_fixed`. Do not leave a tracked file with both staged and unstaged edits when committing: if the hook fails, lefthook's stash restore can silently revert the unstaged part. After any hook failure, check `git status` and diff.
-- **CI runs only on pull requests** (`ci.yml`: lint, typecheck, test, build, no-push Docker build). Work goes through PRs.
+- **CI runs only on pull requests** (`ci.yml`: lint, typecheck, test, build, no-push Docker build, Storybook build). Work goes through PRs.
 - Dockerfile's corepack `pnpm@…` pin must match `packageManager` in `package.json`.
 - The host boundary is `App.tsx` (`useApp`), `lib/tools.ts` (`callTool` wraps `app.callServerTool`) and the hooks `usePollView` and `useHostTheme`; nothing else references `@modelcontextprotocol/ext-apps`. Screens and primitives take a view slice and callbacks only.
 
 ## Docs: what to trust
 
-`docs/superpowers/specs/2026-09-14-portfolio-restructure-design.md` (layout, tooling) and `docs/superpowers/specs/2026-09-14-game-design-and-use-cases.md` (its "Decisions", "Use cases", "Server model", "Tools", "Widget" and "Visual system" sections match the code; its "Storybook" section describes PR 3, which has not landed yet) match the code; `docs/superpowers/plans/2026-09-14-game-model-and-tools.md` and `docs/superpowers/plans/2026-09-14-widget-reskin.md` are the plans for the server and widget halves of the latter. The two `2026-06-18` specs and both `2026-06-18` plans predate the restructure (`packages/*`, npm workspaces, Node 20, `@modelcontextprotocol/sdk` v1, zod 3, a vanilla `widget.html`) and their game behaviour is superseded by the 2026-09-14 game spec; do not use them. The v1 spec (`…-mcp-game-design.md`, mcp-ui external URL + WebSocket) is fully retired.
+`docs/superpowers/specs/2026-09-14-portfolio-restructure-design.md` (layout, tooling) and `docs/superpowers/specs/2026-09-14-game-design-and-use-cases.md` (its "Decisions", "Use cases", "Server model", "Tools", "Widget", "Visual system" and "Storybook" sections) match the code; `docs/superpowers/plans/2026-09-14-game-model-and-tools.md`, `docs/superpowers/plans/2026-09-14-widget-reskin.md` and `docs/superpowers/plans/2026-09-14-storybook-and-a11y.md` are the plans that implemented the latter. The two `2026-06-18` specs and both `2026-06-18` plans predate the restructure (`packages/*`, npm workspaces, Node 20, `@modelcontextprotocol/sdk` v1, zod 3, a vanilla `widget.html`) and their game behaviour is superseded by the 2026-09-14 game spec; do not use them. The v1 spec (`…-mcp-game-design.md`, mcp-ui external URL + WebSocket) is fully retired.
 
 Reference implementations for MCP Apps patterns: the `ext-apps` repo examples `basic-server-react` (starter) and `system-monitor-server` (polling pattern).

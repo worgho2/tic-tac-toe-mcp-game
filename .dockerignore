@@ -9,3 +9,5 @@ docs
 .env.*
 !.env.example
 *.log
+.storybook
+storybook-static
