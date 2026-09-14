@@ -41,6 +41,10 @@ All assets are inlined into `dist/mcp-app.html`; the widget must not reference e
 
 `pnpm test` runs two Vitest projects. Widget tests (`src/app/**/*.test.{ts,tsx}`) run in jsdom with Testing Library; render screens from the fixtures in `src/app/fixtures/views.ts`, query by role or label, and drive them with `@testing-library/user-event`. Run just that project with `pnpm vitest run --project app`.
 
+## Storybook
+
+`pnpm storybook` serves every primitive and screen state at http://localhost:6006 (light/dark toolbar, 320px "Small mobile" viewport on the narrow stories, a11y panel from `@storybook/addon-a11y`). `pnpm build-storybook` writes `storybook-static/`, which CI builds on every pull request. Stories live next to their components as `*.stories.tsx` and reuse `src/app/fixtures/views.ts`; add a story whenever you add a state a reviewer should be able to see without an MCP host.
+
 ## Scripts
 
 | Command | What it does |

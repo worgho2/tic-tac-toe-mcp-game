@@ -2,7 +2,11 @@
 
 > Challenge a friend to tic-tac-toe without leaving Claude, ChatGPT or VS Code. No app, no account, no browser tab. The board shows up right in the conversation.
 
-<!-- TODO: demo GIF at docs/media/demo.gif once the game design round is done -->
+<p align="center">
+  <img src="docs/media/join.png" alt="Join screen: name input and Join Game button on a pixel-art panel" width="30%" />
+  <img src="docs/media/lobby.png" alt="Lobby: online players with Invite buttons, received and sent invites with countdowns" width="30%" />
+  <img src="docs/media/game.png" alt="Game: score header, 3x3 board, confetti and a You win ribbon" width="30%" />
+</p>
 
 ## What is this?
 
@@ -33,9 +37,9 @@ https://tic-tac-toe-mcp-game.baziewi.cz/mcp
 
 **3. Pick a name.** Type a display name and join the lobby. Your friend does the same.
 
-**4. Invite and play.** You will see each other listed. One of you hits *Invite*, the other *Accept*. The player who sent the invite is X and goes first. Tap a cell on your turn; the opponent's move shows up within a couple of seconds.
+**4. Invite and play.** You will see each other listed. One of you hits *Invite*, the other *Accept*. The player who sent the invite is X and goes first. Tap a cell on your turn; the opponent's move shows up within a couple of seconds. Names can repeat: everyone gets a `#1234` tag, so look for the full handle. Invites expire after a minute.
 
-**5. Rematch.** When the game ends, *Back to lobby* returns you both to the lobby for another round.
+**5. Rematch.** When a round ends the next one starts by itself after a moment, with X and O swapped and the score kept. *Back to lobby* ends the match for both of you.
 
 ```mermaid
 sequenceDiagram

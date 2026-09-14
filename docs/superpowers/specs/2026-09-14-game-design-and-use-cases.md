@@ -190,8 +190,9 @@ ext-apps' `useApp` enables `autoResize` by default, so the widget's content heig
 ## Storybook
 
 - Storybook 10, `@storybook/react-vite`, `.storybook/main.ts` with `stories: ['../src/app/**/*.stories.tsx']`. The builder loads the root `vite.config.ts` by default, so `viteFinal` removes the `vite-plugin-singlefile` plugin by name and drops `build.rollupOptions.input`; `@vitejs/plugin-react` is kept.
-- Stories: every primitive (all variants and states); Join (empty, with error, 0 and many online); Lobby (empty, many players, with received and sent invites, confirm modal open, 400px viewport); Game (your turn, opponent's turn, win, loss, draw, mid-rematch); both themes via a global toolbar toggle that sets `data-theme`.
-- Scripts: `storybook` (`storybook dev -p 6006`), `build-storybook`. Output `storybook-static/` git-ignored, excluded from Biome, `tsconfig.server.json`, and the Docker image.
+- Stories: every primitive (all variants and states); Join (empty, with error, 0 and many online); Lobby (empty, many players, with received and sent invites, confirm modal open, 320px "Small mobile" viewport); Game (your turn, opponent's turn, win, loss, draw, mid-rematch); both themes via a global toolbar toggle that sets `data-theme`.
+- Scripts: `storybook` (`storybook dev -p 6006`), `build-storybook`.
+- Output `storybook-static/` git-ignored, excluded from Biome and the Docker image (`tsconfig.server.json` only includes `src/server`).
 - CI: a `build-storybook` job on pull requests.
 
 ## Testing
@@ -201,6 +202,7 @@ ext-apps' `useApp` enables `autoResize` by default, so the widget's content heig
 - `server.test.ts`: eight app-only tools with `visibility: ['app']`; `join_game` payload matches the new shape.
 - Widget: Vitest gets a second project (`src/app/**/*.test.{ts,tsx}`, `jsdom`, Testing Library) for the search filter, countdown, overlay-per-round latch and screen rendering from fixture views. Fixtures are shared with the stories.
 - Manual: two clients through the ext-apps `basic-host`, covering UC1–UC6.
+- `src/app/styles/contrast.test.ts`: WCAG AA contrast of every text/mark token against the sampled Kenney tile fills, both themes.
 
 ## Docs
 
