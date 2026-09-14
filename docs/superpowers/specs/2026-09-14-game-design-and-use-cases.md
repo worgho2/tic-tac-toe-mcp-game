@@ -130,7 +130,7 @@ Internal: `Invite` gains `createdAt`; `Game` becomes `Match` with `round`, `scor
 
 ### Tools
 
-`join_game` unchanged (model-visible, links the `ui://` resource). App-only tools, all following the handler shape `touch → sweep → mutate → viewFor + error`:
+`join_game` unchanged (model-visible, links the `ui://` resource). App-only tools, all following the handler shape `reconnect (touch, or re-create a swept id in the name phase) → sweep → mutate → viewFor + error`:
 
 | Tool | Args | Mutation |
 |---|---|---|
@@ -198,7 +198,7 @@ ext-apps' `useApp` enables `autoResize` by default, so the widget's content heig
 
 ## Testing
 
-- `lobby.test.ts`: tag assignment and collision retry; invite expiry via injected clock; per-pair uniqueness; cancel; stale accept after the sender entered another match returns "invite not found"; auto-cancel of other invites on match start with events; rematch after 3 s with swapped marks; score on win, unchanged on draw; leave ends match and emits `opponent-left`; events drained once.
+- `lobby.test.ts`: reconnect after a sweep (name phase, not counted online) and on a live player (presence only); tag assignment and collision retry; invite expiry via injected clock; per-pair uniqueness; cancel; stale accept after the sender entered another match returns "invite not found"; auto-cancel of other invites on match start with events; rematch after 3 s with swapped marks; score on win, unchanged on draw; leave ends match and emits `opponent-left`; events drained once.
 - `handlers.test.ts`: `cancel_invite` handler; reply shape for the new `PlayerView`.
 - `server.test.ts`: eight app-only tools with `visibility: ['app']`; `join_game` payload matches the new shape.
 - Widget: Vitest gets a second project (`src/app/**/*.test.{ts,tsx}`, `jsdom`, Testing Library) for the search filter, countdown, overlay-per-round latch and screen rendering from fixture views. Fixtures are shared with the stories.
