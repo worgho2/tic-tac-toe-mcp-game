@@ -72,7 +72,7 @@ Registered in `server.ts` via `registerAppTool` / `registerAppResource` from `@m
 
 **Visual system.** Plain CSS in `src/app/styles/`: `tokens.css` holds the palette and one CSS custom property per Kenney tile role, overridden under `:root[data-theme='dark']`; `base.css` styles the primitives as `border-image` 9-slices (`border-image-slice: 8 fill`, 16px borders for panels/cells = 2x, 8px for buttons/inputs/badges = 1x, `image-rendering: pixelated`); `animations.css` holds the round-end overlay (CSS confetti, bobbing 🦆, `prefers-reduced-motion` off switch). Assets live in `src/app/assets/` (17 tiles from Kenney "UI Pack - Pixel Adventure", CC0, plus Press Start 2P, OFL) and are inlined into the single-file bundle by `vite-plugin-singlefile`; never reference an external URL. Host sizing is automatic (`useApp` enables `autoResize`).
 
-Widget tests use Testing Library with `src/app/test-setup.ts` (jest-dom matchers, cleanup) and the fixtures in `src/app/fixtures/views.ts`; the same fixtures feed the Storybook stories.
+Widget tests use Testing Library with `src/app/test-setup.ts` (jest-dom matchers, cleanup) and the fixtures in `src/app/fixtures/views.ts`; the same fixtures will feed the Storybook stories in PR 3.
 
 ## Conventions
 

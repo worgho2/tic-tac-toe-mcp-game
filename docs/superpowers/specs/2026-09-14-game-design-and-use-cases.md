@@ -180,10 +180,10 @@ ext-apps' `useApp` enables `autoResize` by default, so the widget's content heig
 
 ## Visual system
 
-- Tiles come from `Tiles/Large tiles/Thick outline` (32x32). Each primitive uses `border-image: url(data:…) 10 fill / 10px round` (slice values tuned per tile) so panels scale without blur; `image-rendering: pixelated` on everything.
+- Tiles come from `Tiles/Large tiles/Thick outline` (32x32). Each primitive uses `border-image-slice: 8 fill` plus `border-image-width` 16px (panels, cells) or 8px (buttons, inputs, badges, toasts) and `border-image-repeat: round` so panels scale without blur; `image-rendering: pixelated` on everything.
 - Two palettes mapped to the host theme via the existing `data-theme`: light → beige panels, brown buttons, red ribbons; dark → grey/blue panels, blue buttons, red ribbons.
 - Button states: default tile, pressed tile (Kenney ships both), disabled at 50% opacity.
-- Font: Press Start 2P at 10px/12px/16px sizes; line-height 1.6 for readability.
+- Font: Press Start 2P at 8px badges, 10px body, 11–12px headings and ribbons, 16px scores; line-height 1.6 for readability.
 - Vite: `vite-plugin-singlefile` already forces `assetsInlineLimit` to always inline, so imported PNGs and the woff2 become data URIs with no config change. No external URLs in the bundle, so no `_meta.ui.csp` changes.
 - Credits: Kenney (CC0) and the font (OFL) in `CONTRIBUTING.md` and in the asset folders' license files.
 

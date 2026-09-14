@@ -19,6 +19,10 @@ This also installs the git hooks via [Lefthook](https://lefthook.dev/).
 ```
 mcp-app.html         Vite entry for the widget
 src/app/             React widget rendered inside the chat (useApp from @modelcontextprotocol/ext-apps/react)
+src/app/ui/          9-slice primitives (Panel, Button, Modal, Toast, ...)
+src/app/screens/     Pages (Join, Lobby, Game)
+src/app/styles/      Tokens (palette per theme), base styles, animations
+src/app/assets/      Kenney tiles and the Press Start 2P font
 src/server/main.ts   Express + Streamable HTTP transport (or --stdio)
 src/server/server.ts createServer(): tools + the ui:// resource
 src/server/game/     Pure tic-tac-toe rules
