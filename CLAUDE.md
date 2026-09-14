@@ -53,14 +53,15 @@ Two trees under `src/`, built by different toolchains:
 Registered in `server.ts` via `registerAppTool` / `registerAppResource` from `@modelcontextprotocol/ext-apps/server`, with zod 4 `z.object` schemas.
 
 - `join_game` is the **only model-visible tool**. It carries `_meta: { ui: { resourceUri: RESOURCE_URI } }` so the host renders the widget.
-- The seven others (`set_name`, `get_state`, `invite`, `accept_invite`, `decline_invite`, `make_move`, `leave`) are **app-only**: `_meta.ui.visibility: ['app']`. They are called by the widget, hidden from the model.
+- The eight others (`set_name`, `get_state`, `invite`, `accept_invite`, `decline_invite`, `cancel_invite`, `make_move`, `leave`) are **app-only**: `_meta.ui.visibility: ['app']`. They are called by the widget, hidden from the model.
 - Always use the nested `_meta.ui` shape, never the deprecated flat `_meta["ui/resourceUri"]`. The resource mime type must be `RESOURCE_MIME_TYPE` from ext-apps (`text/html;profile=mcp-app`). `src/server/server.test.ts` asserts all of this with an in-memory `Client` + `InMemoryTransport` pair; extend it when adding tools.
 
 ### Layers on the server
 
 - `game/game.ts`: pure rules (`createBoard`, `applyMove` immutable, `getResult`). No lobby knowledge.
-- `lobby/lobby.ts`: in-memory `Lobby` (players, invites, games, presence). Presence is heartbeat-based with `PRESENCE_TTL_MS = 10000`; `sweep()` drops stale players. The constructor takes injectable `genId` and `clock` so tests drive time deterministically. Mutations return an error string or `null`; `viewFor(playerId)` produces the `PlayerView` snapshot the widget renders.
-- `tools/handlers.ts`: one pure function per tool. Uniform contract: `lobby.touch(playerId)` → mutate → return `viewFor(playerId)` with the transient `error` merged in. Every reply duplicates the payload in both `structuredContent` and a JSON `content[0].text` block. New tools should follow this exact shape.
+- `lobby/types.ts`: constants (`PRESENCE_TTL_MS = 10_000`, `INVITE_TTL_MS = 60_000`, `REMATCH_DELAY_MS = 3_000`) and the public view types (`PlayerView`, `GameView`, `InviteView`, `LobbyEvent`). Re-exported from `lobby.ts`.
+- `lobby/lobby.ts`: in-memory `Lobby` (players, invites, matches, presence). Players get a `name#tag` handle (4 random digits, unique per name). Invites expire after 60 s and are auto-cancelled when a party enters a match. A match keeps a per-player score and restarts automatically 3 s after a round ends, with X and O swapped. All time-based transitions live in `sweep()`. The constructor takes injectable `genId`, `clock` and `genTag` so tests are deterministic. Mutations return an error string or `null`; `viewFor(playerId)` snapshots the `PlayerView` and drains that player's `events`.
+- `tools/handlers.ts`: one pure function per tool. Uniform contract: `lobby.touch(playerId)` → `lobby.sweep()` → mutate → return `viewFor(playerId)` with the transient `error` merged in. Every reply duplicates the payload in both `structuredContent` and a JSON `content[0].text` block. New tools should follow this exact shape.
 
 ### Widget
 
@@ -81,6 +82,6 @@ Widget tests are not covered by the vitest glob (`.test.ts` only, node environme
 
 ## Docs: what to trust
 
-Only `docs/superpowers/specs/2026-09-14-portfolio-restructure-design.md` matches the code. The two `2026-06-18` specs and both files under `docs/superpowers/plans/` predate the restructure and describe `packages/*`, npm workspaces, Node 20, `@modelcontextprotocol/sdk` v1, zod 3 and a vanilla `widget.html`; use them only for game/lobby behaviour (tool table, `PlayerView`, presence rules), not for layout or tooling. The v1 spec (`…-mcp-game-design.md`, mcp-ui external URL + WebSocket) is fully retired.
+`docs/superpowers/specs/2026-09-14-portfolio-restructure-design.md` (layout, tooling) and `docs/superpowers/specs/2026-09-14-game-design-and-use-cases.md` (game behaviour, `PlayerView`, visual system, Storybook) match the code; `docs/superpowers/plans/2026-09-14-game-model-and-tools.md` is the plan for the server half of the latter. The two `2026-06-18` specs and both `2026-06-18` plans predate the restructure (`packages/*`, npm workspaces, Node 20, `@modelcontextprotocol/sdk` v1, zod 3, a vanilla `widget.html`) and their game behaviour is superseded by the 2026-09-14 game spec; do not use them. The v1 spec (`…-mcp-game-design.md`, mcp-ui external URL + WebSocket) is fully retired.
 
 Reference implementations for MCP Apps patterns: the `ext-apps` repo examples `basic-server-react` (starter) and `system-monitor-server` (polling pattern).
