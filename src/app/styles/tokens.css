@@ -3,7 +3,14 @@
   --font: 'Press Start 2P', 'Courier New', monospace;
   --fg: #3a2a1a;
   --muted: #7d6b58;
-  --accent: #e5534b;
+  --accent: #c73e36;
+  --focus: #b3261e;
+  --cell-x: #c73e36;
+  --cell-o: #2a6fae;
+  --ribbon-fg: #fff6e0;
+  --input-fg: #2c3340;
+  --badge-fg: #2c3340;
+  --toast-fg: #2c3340;
   --shadow: rgba(0, 0, 0, 0.35);
   --btn-primary-fg: #fff6e0;
   --btn-secondary-fg: #2c3340;
@@ -27,8 +34,13 @@
 }
 
 :root[data-theme='dark'] {
-  --fg: #f0e6d2;
-  --muted: #a9b4c4;
+  --fg: #f6efe0;
+  --muted: #cdd6e2;
+  --accent: #ff8a7f;
+  --focus: #ffd166;
+  --cell-x: #ffb3ac;
+  --cell-o: #8fd0ff;
+  --toast-fg: #f6efe0;
   --shadow: rgba(0, 0, 0, 0.6);
   --btn-primary-fg: #2c3340;
   --btn-secondary-fg: #f0e6d2;

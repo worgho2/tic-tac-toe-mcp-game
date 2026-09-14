@@ -173,9 +173,13 @@ h3 {
   border-image-source: var(--tile-btn-danger);
 }
 
+.btn--danger:active:not(:disabled) {
+  filter: brightness(0.9);
+}
+
 .input {
   font: inherit;
-  color: #2c3340;
+  color: var(--input-fg);
   border-width: 8px;
   border-image-source: var(--tile-input);
   border-image-width: 8px;
@@ -188,14 +192,14 @@ h3 {
 .btn:focus-visible,
 .cell:focus-visible,
 .card__main:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
 .badge {
   font-size: 8px;
   line-height: 1;
-  color: #2c3340;
+  color: var(--badge-fg);
   border-width: 8px;
   border-image-width: 8px;
   padding: 2px 2px 0;
@@ -222,11 +226,15 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff6e0;
+  color: var(--ribbon-fg);
   font-size: 12px;
   text-align: center;
   background: var(--tile-ribbon-m) center / 64px 64px repeat-x;
   image-rendering: pixelated;
+}
+
+.ribbon__text {
+  white-space: nowrap;
 }
 
 .ribbon::before,
@@ -294,17 +302,13 @@ h3 {
 
 .toast {
   font: inherit;
-  color: #2c3340;
+  color: var(--toast-fg);
   text-align: left;
   border-width: 8px;
   border-image-source: var(--tile-toast);
   border-image-width: 8px;
   padding: 4px;
   cursor: pointer;
-}
-
-:root[data-theme='dark'] .toast {
-  color: var(--fg);
 }
 
 /* ---- Screens ---- */
@@ -409,11 +413,11 @@ h3 {
 }
 
 .cell--x {
-  color: #d2453d;
+  color: var(--cell-x);
 }
 
 .cell--o {
-  color: #2f7fc1;
+  color: var(--cell-o);
 }
 
 @media (max-width: 359px) {
@@ -423,5 +427,9 @@ h3 {
   .cell {
     width: 64px;
     height: 64px;
+  }
+  .ribbon {
+    padding: 0 48px;
+    min-width: 0;
   }
 }
