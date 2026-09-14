@@ -17,8 +17,9 @@
 - Conventional Commits enforced by commitlint (`feat`, `fix`, `refactor`, `test`, `docs`, `chore`, …). Each commit message ends with `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
 - Lefthook pre-commit formats staged files with `stage_fixed`. Always stage whole files; never leave a tracked file half-staged.
 - Constants from the spec, verbatim: `PRESENCE_TTL_MS = 10_000`, `INVITE_TTL_MS = 60_000`, `REMATCH_DELAY_MS = 3_000`, `MAX_NAME = 24`, tags are 4 random digits, error copy `"<name>#<tag> is in another match"`.
-- Work on branch `feat/game-model-and-tools` off `main`; CI runs on the pull request only.
-- `pnpm build`, `pnpm test`, `pnpm typecheck`, `pnpm lint` must all pass at the end of every task from Task 4 on (Tasks 2 and 3 leave later files temporarily broken, as noted).
+- Prerequisite: the docs pull request carrying the spec and this plan (branch `docs/game-design-spec`) is merged to `main`. Until then, branch from `docs/game-design-spec` and rebase onto `main` later.
+- Work on branch `feat/game-model-and-tools`; CI runs on the pull request only.
+- `pnpm build`, `pnpm test`, `pnpm typecheck`, `pnpm lint` must all pass at the end of every task from Task 5 on. Tasks 2 to 4 leave the widget temporarily broken (it still reads `view.invite` / `view.notice`), so `pnpm typecheck` and `pnpm lint` fail until Task 5; `pnpm test` and `pnpm build` pass again from Task 4.
 
 ---
 
@@ -621,7 +622,7 @@ Add these two `describe` blocks inside the outer `describe('Lobby', …)`, after
 - [ ] **Step 3: Run the tests to verify they fail**
 
 Run: `pnpm vitest run src/server/lobby/lobby.test.ts`
-Expected: FAIL. Type errors and assertion failures such as `Property 'invites' does not exist`, `REMATCH_DELAY_MS is not exported`.
+Expected: FAIL. Vitest does not typecheck, so the failures are runtime: `TypeError: Cannot read properties of undefined (reading 'received')` from `inviteFrom`, `REMATCH_DELAY_MS` undefined in the rematch tests, `lobby.cancelInvite is not a function`.
 
 - [ ] **Step 4: Rewrite `src/server/lobby/lobby.ts`**
 
@@ -1137,7 +1138,7 @@ describe('tool handlers', () => {
 - [ ] **Step 2: Run to verify failure**
 
 Run: `pnpm vitest run src/server/tools/handlers.test.ts`
-Expected: FAIL, `handleCancelInvite` is not exported; the sweep test fails with `not your turn` or `round is over`.
+Expected: FAIL: `TypeError: handleCancelInvite is not a function`, and the sweep test's `expect(view.error).toBeNull()` fails with `round is over`.
 
 - [ ] **Step 3: Update `src/server/tools/handlers.ts`**
 

@@ -15,7 +15,7 @@ Infrastructure decisions (React 19, ext-apps 2.0, single-file Vite bundle, state
 |---|---|
 | Player identity | `name#1234`: a trimmed name (max 24 chars) plus a random 4-digit tag assigned on `set_name`, retried on collision. Names may repeat; handles are unique among registered players. |
 | Invites | Any number of sent and received invites per player, one pending invite per (from, to) pair. Expire after 60 s. Sender can cancel. When a match starts, every other pending invite of either player is removed and the counter-party is notified. |
-| Accept while sender busy | The invite is deleted and the accepter gets the error "`<handle>` is in another match". |
+| Accept while sender busy | Cannot happen through the API: when the sender enters a match the invite is auto-cancelled and the target receives an `invite-cancelled` event with reason `in-match`, shown as "`<handle>` is in another match". A stale Accept on a card the widget has not refreshed yet returns "invite not found". `acceptInvite` keeps a defensive guard with the same copy. |
 | Rematch | A finished round stays visible for 3 s, then the next round starts automatically. X and O alternate every round. Winner's score +1; draws change nothing. |
 | Match end | Only when a player leaves (button) or is swept by presence. The other player returns to the lobby with an "opponent left" event. |
 | Loss / win feedback | CSS-only confetti on a win, a bobbing 🦆 emoji on a loss, a plain "Draw" ribbon on a draw. No extra sprite assets. |
@@ -51,7 +51,7 @@ Actors: **Player** (a human using the widget inside an AI chat client), **Host**
 ### UC4 Receive and answer an invite
 
 1. A received invite appears under "Received" with the sender's handle, a countdown, Accept and Deny.
-2. Accept: if the sender is still idle, a match starts and both players move to the Game page. If the sender is busy, the invite is removed and an error toast says "`<handle>` is in another match".
+2. Accept: if the sender is still idle, a match starts and both players move to the Game page. If the sender entered another match meanwhile, the invite has already been auto-cancelled: the Player sees the "`<handle>` is in another match" toast from the `in-match` event, and a stale Accept returns the error "invite not found".
 3. Deny: the invite is removed; the sender receives an `invite-declined` event.
 4. Expiry: after 60 s the invite disappears from both sides; the sender receives an `invite-expired` event.
 5. Cancel by sender: the invite disappears; the receiver receives an `invite-cancelled` event.
@@ -121,7 +121,7 @@ Internal: `Invite` gains `createdAt`; `Game` becomes `Match` with `round`, `scor
 - `register(id, name)`: assigns a tag, retrying while another registered player has the same `name#tag`.
 - `invite(from, to)`: rejects self, unregistered, busy, duplicate pending pair. Stores `createdAt`. Mutual invites (A→B and B→A both pending) are allowed; accepting either starts the match and the auto-cancel step removes the other.
 - `cancelInvite(by, inviteId)`: only the sender; pushes `invite-cancelled/by-sender` to the receiver.
-- `acceptInvite(by, inviteId)`: deletes the invite; if the sender is busy returns "`<handle>` is in another match"; otherwise creates the match, then removes all other invites of both players, pushing `invite-cancelled/in-match` to each counter-party.
+- `acceptInvite(by, inviteId)`: deletes the invite; returns "invite not found" if it is unknown or not addressed to `by`; keeps a defensive "`<handle>` is in another match" guard for a busy sender (unreachable through the public API because of auto-cancel); otherwise creates the match, then removes all other invites of both players, pushing `invite-cancelled/in-match` to each counter-party.
 - `sweep()`: presence removal as today, plus invite expiry (push `invite-expired` to the sender), plus rematch: every match with `endedAt !== null` and `clock() - endedAt >= REMATCH_DELAY_MS` gets `round + 1`, swapped marks, empty board, `turn = 'X'`, `over = false`, `endedAt = null`. `viewFor` stays a pure snapshot (apart from draining `events`); instead every handler calls `sweep()` after `touch()` and before its mutation, so time-based transitions advance on any tool call.
 - `makeMove`: on a terminal result sets `over`, `result`, `endedAt`, and increments the winner's score.
 - `leave(id)`: ends the match for both regardless of `over`; the opponent gets `opponent-left` and `gameId = null`.
