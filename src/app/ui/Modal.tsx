@@ -1,4 +1,4 @@
-import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef } from 'react';
+import { type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useId, useRef } from 'react';
 import { Button } from './Button';
 
 interface Props {
@@ -31,40 +31,78 @@ export function Modal({
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     cancelRef.current?.focus();
+    return () => {
+      const opener = openerRef.current;
+      if (opener && document.contains(opener)) {
+        opener.focus();
+      }
+    };
   }, []);
 
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
+  // Document-level fallback: catches Escape and Tab even when focus has left the dialog
+  // entirely (e.g. landed on <body>), which never reaches the dialog's own onKeyDown.
+  useEffect(() => {
+    const onDocumentKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCancel();
+        return;
+      }
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+      if (dialogRef.current.contains(document.activeElement)) return;
       event.preventDefault();
-      onCancel();
-      return;
-    }
+      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE));
+      focusable[0]?.focus();
+    };
+    document.addEventListener('keydown', onDocumentKeyDown);
+    return () => document.removeEventListener('keydown', onDocumentKeyDown);
+  }, [onCancel]);
+
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'Tab' || !dialogRef.current) return;
     const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE));
     if (focusable.length === 0) return;
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
+    const active = document.activeElement;
+    if (event.shiftKey && (active === first || active === dialogRef.current)) {
       event.preventDefault();
       last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
+    } else if (!event.shiftKey && active === last) {
       event.preventDefault();
       first.focus();
     }
   };
 
+  const onDialogMouseDown = (event: MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (!target.closest('button, input, [href], select, textarea')) {
+      event.preventDefault();
+    }
+  };
+
   return (
-    <div className="modal-backdrop">
+    // biome-ignore lint/a11y/noStaticElementInteractions: mousedown here only guards focus, it is not an interaction target
+    <div
+      className="modal-backdrop"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) event.preventDefault();
+      }}
+    >
       <div
         ref={dialogRef}
         className="panel modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        tabIndex={-1}
         onKeyDown={onKeyDown}
+        onMouseDown={onDialogMouseDown}
       >
         <h2 id={titleId} className="modal__title">
           {title}
