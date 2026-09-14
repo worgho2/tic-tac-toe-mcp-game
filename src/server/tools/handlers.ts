@@ -19,9 +19,12 @@ function reply(data: object): ToolReply {
   };
 }
 
-/** Heartbeat for the caller, then advance every time-based transition before the mutation runs. */
+/**
+ * Heartbeat for the caller (re-creating a swept player so a reloaded widget can register again), then
+ * advance every time-based transition before the mutation runs.
+ */
 function tick(lobby: Lobby, playerId: string): void {
-  lobby.touch(playerId);
+  lobby.reconnect(playerId);
   lobby.sweep();
 }
 

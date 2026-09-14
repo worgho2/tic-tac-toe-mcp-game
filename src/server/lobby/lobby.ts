@@ -85,6 +85,21 @@ export class Lobby {
     if (p) p.lastSeen = this.clock();
   }
 
+  /**
+   * Heartbeat that survives presence loss. A known id is touched; an unknown one (typically a widget that
+   * reloaded after its player was swept) is re-created in the name phase so it can register again. Returns
+   * true when a record was created. Ids are server-generated and unguessable, so accepting one back is no
+   * more exposed than `join_game`, which anyone can call.
+   */
+  reconnect(id: PlayerId): boolean {
+    if (this.players.has(id)) {
+      this.touch(id);
+      return false;
+    }
+    this.players.set(id, { id, name: null, tag: null, matchId: null, lastSeen: this.clock(), events: [] });
+    return true;
+  }
+
   /** Presence removal, invite expiry and automatic rematches. Idempotent; safe to call on every request. */
   sweep(): void {
     const now = this.clock();

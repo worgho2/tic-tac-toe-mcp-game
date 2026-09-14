@@ -451,5 +451,31 @@ describe('Lobby', () => {
       expect(cv.invites).toEqual({ sent: [], received: [] });
       expect(cv.events).toEqual([]);
     });
+
+    it('reconnect re-creates a swept id in the name phase without counting it as online', () => {
+      const a = join('Alice');
+      const b = join('Bob');
+      clock.advance(PRESENCE_TTL_MS + 1);
+      lobby.touch(b);
+      lobby.sweep();
+      expect(lobby.reconnect(a)).toBe(true);
+      const av = lobby.viewFor(a);
+      expect(av.phase).toBe('name');
+      expect(av.you).toEqual({ id: a, name: null, tag: null });
+      expect(av.onlineCount).toBe(1);
+      expect(lobby.register(a, 'Alice')).toBeNull();
+      expect(lobby.viewFor(a).phase).toBe('lobby');
+      expect(lobby.viewFor(b).onlineCount).toBe(2);
+    });
+
+    it('reconnect on a live player only refreshes presence', () => {
+      const a = join('Alice');
+      clock.advance(PRESENCE_TTL_MS - 1);
+      expect(lobby.reconnect(a)).toBe(false);
+      clock.advance(PRESENCE_TTL_MS - 1);
+      lobby.sweep();
+      expect(lobby.viewFor(a).phase).toBe('lobby');
+      expect(lobby.viewFor(a).you.name).toBe('Alice');
+    });
   });
 });

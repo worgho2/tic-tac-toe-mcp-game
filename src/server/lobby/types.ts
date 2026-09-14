@@ -1,7 +1,7 @@
 import type { Board, GameResult, Mark } from '../game/game.js';
 
 /** A player is dropped after this long without a tool call. */
-export const PRESENCE_TTL_MS = 10_000;
+export const PRESENCE_TTL_MS = 30_000;
 /** Pending invites disappear after this long. */
 export const INVITE_TTL_MS = 60_000;
 /** A finished round stays visible this long before the next round starts. */
