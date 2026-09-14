@@ -42,7 +42,8 @@ export interface CreateServerOptions {
   readHtml?: () => Promise<string>;
 }
 
-const playerIdSchema = z.string().min(1);
+// Ids come from `defaultGenId` (base36, 8 chars); the bound keeps `reconnect` from storing arbitrary strings.
+const playerIdSchema = z.string().regex(/^[a-z0-9]{1,32}$/);
 
 /**
  * Creates an MCP server exposing one model-facing tool (`join_game`, which opens the widget) and a set

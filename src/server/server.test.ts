@@ -82,4 +82,11 @@ describe('MCP server contract', () => {
     const result = await client.callTool({ name: 'make_move', arguments: { playerId: 'p1', cell: 42 } });
     expect(result.isError).toBe(true);
   });
+
+  it('rejects player ids that do not look like generated ids', async () => {
+    const result = await client.callTool({ name: 'get_state', arguments: { playerId: 'x'.repeat(33) } });
+    expect(result.isError).toBe(true);
+    const upper = await client.callTool({ name: 'get_state', arguments: { playerId: 'ABC-123' } });
+    expect(upper.isError).toBe(true);
+  });
 });

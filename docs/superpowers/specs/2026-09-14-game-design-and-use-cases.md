@@ -21,7 +21,7 @@ Infrastructure decisions (React 19, ext-apps 2.0, single-file Vite bundle, state
 | Loss / win feedback | CSS-only confetti on a win, a bobbing 🦆 emoji on a loss, a plain "Draw" ribbon on a draw. No extra sprite assets. |
 | UI stack | React 19 + plain CSS. Primitives skinned with `border-image` 9-slice cuts of Kenney 32px tiles, `image-rendering: pixelated`. Font: Press Start 2P (OFL). All assets inlined into the single-file bundle. |
 | Inspection tool | Storybook 10 (`@storybook/react-vite`, supports Vite 8). Stories for every primitive and every screen state. |
-| Presence | Unchanged: 10 s TTL, 1.5 s poll. A backgrounded browser tab may throttle timers and get the player swept mid-match; documented limitation. |
+| Presence | 30 s TTL, 1.5 s poll, plus an immediate poll when the tab becomes visible. A swept id is not a dead end: the next call from that id re-creates the player in the name phase (`Lobby.reconnect`), so a reloaded widget registers again with a new tag. A tab hidden long enough for Chrome's intensive throttling (about 5 min) can still be swept mid-match; documented limitation. |
 | Native dialogs | Never `window.confirm`/`alert`. Confirmations are in-widget modals. |
 
 ## Use cases
@@ -67,14 +67,15 @@ Actors: **Player** (a human using the widget inside an AI chat client), **Host**
 
 ### UC6 Presence loss
 
-1. If a player stops polling for 10 s they are removed, their invites deleted, and any match they were in ends with an `opponent-left` event for the other side.
+1. If a player stops polling for 30 s they are removed, their invites deleted, and any match they were in ends with an `opponent-left` event for the other side.
+2. If that id calls any app-only tool afterwards (the host replays the `join_game` result after a page reload), the player is re-created in the name phase and can register again; they get a fresh `#tag` and start from the lobby.
 
 ## Server model
 
 ### Types
 
 ```ts
-export const PRESENCE_TTL_MS = 10_000;
+export const PRESENCE_TTL_MS = 30_000;
 export const INVITE_TTL_MS = 60_000;
 export const REMATCH_DELAY_MS = 3_000;
 
@@ -129,7 +130,7 @@ Internal: `Invite` gains `createdAt`; `Game` becomes `Match` with `round`, `scor
 
 ### Tools
 
-`join_game` unchanged (model-visible, links the `ui://` resource). App-only tools, all following the handler shape `touch → sweep → mutate → viewFor + error`:
+`join_game` unchanged (model-visible, links the `ui://` resource). App-only tools, all following the handler shape `reconnect (touch, or re-create a swept id in the name phase) → sweep → mutate → viewFor + error`:
 
 | Tool | Args | Mutation |
 |---|---|---|
@@ -197,7 +198,7 @@ ext-apps' `useApp` enables `autoResize` by default, so the widget's content heig
 
 ## Testing
 
-- `lobby.test.ts`: tag assignment and collision retry; invite expiry via injected clock; per-pair uniqueness; cancel; stale accept after the sender entered another match returns "invite not found"; auto-cancel of other invites on match start with events; rematch after 3 s with swapped marks; score on win, unchanged on draw; leave ends match and emits `opponent-left`; events drained once.
+- `lobby.test.ts`: reconnect after a sweep (name phase, not counted online) and on a live player (presence only); tag assignment and collision retry; invite expiry via injected clock; per-pair uniqueness; cancel; stale accept after the sender entered another match returns "invite not found"; auto-cancel of other invites on match start with events; rematch after 3 s with swapped marks; score on win, unchanged on draw; leave ends match and emits `opponent-left`; events drained once.
 - `handlers.test.ts`: `cancel_invite` handler; reply shape for the new `PlayerView`.
 - `server.test.ts`: eight app-only tools with `visibility: ['app']`; `join_game` payload matches the new shape.
 - Widget: Vitest gets a second project (`src/app/**/*.test.{ts,tsx}`, `jsdom`, Testing Library) for the search filter, countdown, overlay-per-round latch and screen rendering from fixture views. Fixtures are shared with the stories.

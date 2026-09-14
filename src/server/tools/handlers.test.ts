@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { PlayerView } from '../lobby/lobby.js';
-import { Lobby, REMATCH_DELAY_MS } from '../lobby/lobby.js';
+import { Lobby, PRESENCE_TTL_MS, REMATCH_DELAY_MS } from '../lobby/lobby.js';
 import {
   handleAcceptInvite,
   handleCancelInvite,
@@ -51,6 +51,20 @@ describe('tool handlers', () => {
     expect(view.you.name).toBe('Alice');
     expect(view.you.tag).toMatch(/^\d{4}$/);
     expect(view.error).toBeNull();
+  });
+
+  it('a stale playerId (swept while the widget was reloading) can register again instead of failing', () => {
+    const alice = joinAs('Alice');
+    const bob = joinAs('Bob');
+    now += PRESENCE_TTL_MS + 1;
+    stateOf(bob); // bob polls, which sweeps alice
+    expect(stateOf(bob).onlineCount).toBe(1);
+    const view = handleSetName(lobby, { playerId: alice, name: 'Alice' }).structuredContent as unknown as PlayerView;
+    expect(view.error).toBeNull();
+    expect(view.phase).toBe('lobby');
+    expect(view.you.name).toBe('Alice');
+    expect(view.you.tag).toMatch(/^\d{4}$/);
+    expect(stateOf(bob).onlineCount).toBe(2);
   });
 
   it('handleGetState reflects another player joining', () => {
