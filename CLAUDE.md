@@ -20,7 +20,7 @@ pnpm only (`packageManager` pin, `engineStrict`), Node 24 (`.nvmrc`). Use `corep
 | `pnpm dev` | Runs `vite build --watch` and `tsx watch src/server/main.ts` concurrently on port 8765 |
 | `pnpm build` | `vite build` (widget → `dist/mcp-app.html`) then `tsc -p tsconfig.server.json` (server → `dist/server`) |
 | `pnpm start` | `node dist/server/main.js` |
-| `pnpm typecheck` | `tsc --noEmit` over `src`, both server and app |
+| `pnpm typecheck` | `tsc --noEmit` over `src`, both server and app, plus `.storybook` |
 | `pnpm lint` / `pnpm lint:fix` | `biome check` (lint + format in one; this is what CI gates on) |
 | `pnpm format` / `pnpm format:check` | Biome formatter only |
 | `pnpm test` / `pnpm test:watch` | Vitest with two projects: server (node, src/server/**/*.test.ts) and app (jsdom + Testing Library, src/app/**/*.test.{ts,tsx}) |
@@ -81,7 +81,7 @@ Widget tests use Testing Library with `src/app/test-setup.ts` (jest-dom matchers
 - **Split MCP SDK 2.x** packages (`@modelcontextprotocol/server`, `/node`, `/express`, `/client`), not `@modelcontextprotocol/sdk`. zod 4.
 - **Conventional Commits, enforced by commitlint** on `commit-msg`. Allowed types: `feat fix perf revert docs style chore refactor test build ci wip`. release-please derives version and changelog from them, so `feat` and `fix` have release consequences. Keep `commitlint.config.mjs` `type-enum` in sync with `changelog-sections` in `release-please-config.json`.
 - **pre-commit** runs Biome format on staged files with `stage_fixed`. Do not leave a tracked file with both staged and unstaged edits when committing: if the hook fails, lefthook's stash restore can silently revert the unstaged part. After any hook failure, check `git status` and diff.
-- **CI runs only on pull requests** (`ci.yml`: lint, typecheck, test, build, no-push Docker build). Work goes through PRs.
+- **CI runs only on pull requests** (`ci.yml`: lint, typecheck, test, build, no-push Docker build, Storybook build). Work goes through PRs.
 - Dockerfile's corepack `pnpm@…` pin must match `packageManager` in `package.json`.
 - The host boundary is `App.tsx` (`useApp`), `lib/tools.ts` (`callTool` wraps `app.callServerTool`) and the hooks `usePollView` and `useHostTheme`; nothing else references `@modelcontextprotocol/ext-apps`. Screens and primitives take a view slice and callbacks only.
 

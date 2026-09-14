@@ -1,6 +1,6 @@
 import type { Board, GameView, InviteView, PlayerView, PublicPlayer } from '../lib/tools';
 
-// Shared by the widget tests (and by the Storybook stories in PR 3). Keep values stable: tests assert on them.
+// Shared by the widget tests (and by the Storybook stories). Keep values stable: tests assert on them.
 
 export const you: PlayerView['you'] = { id: 'me', name: 'worgho2', tag: '1234' };
 
