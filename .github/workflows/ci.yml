@@ -53,6 +53,8 @@ jobs:
   storybook:
     name: CI Storybook Build Gate
     runs-on: ubuntu-latest
+    # Release PRs only touch CHANGELOG/version; there is nothing to preview.
+    if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     env:
       STORYBOOK_DISABLE_TELEMETRY: '1'
     steps:
