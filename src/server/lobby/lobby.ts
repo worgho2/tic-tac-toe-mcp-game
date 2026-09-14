@@ -264,11 +264,14 @@ export class Lobby {
 
   /** Drops every pending invite involving `id` except those with `partnerId`, notifying the other party. */
   private cancelInvitesOf(id: PlayerId, partnerId: PlayerId): void {
+    const notified = new Set<PlayerId>();
     for (const [invId, inv] of [...this.invites]) {
       if (inv.fromId !== id && inv.toId !== id) continue;
       this.invites.delete(invId);
       const other = inv.fromId === id ? inv.toId : inv.fromId;
       if (other === partnerId) continue;
+      if (notified.has(other)) continue;
+      notified.add(other);
       this.pushEvent(other, { type: 'invite-cancelled', ...this.handleOf(id), reason: 'in-match' });
     }
   }

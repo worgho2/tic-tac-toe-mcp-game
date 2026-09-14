@@ -302,6 +302,19 @@ describe('Lobby', () => {
       expect(lobby.viewFor(b).invites).toEqual({ sent: [], received: [] });
     });
 
+    it('a third party with mutual invites gets a single in-match event', () => {
+      const a = join('Alice');
+      const b = join('Bob');
+      const c = join('Carol');
+      inviteFrom(a, c);
+      inviteFrom(c, a);
+      startMatch(a, b);
+      expect(lobby.viewFor(c).events).toEqual([
+        { type: 'invite-cancelled', name: 'Alice', tag: '0001', reason: 'in-match' },
+      ]);
+      expect(lobby.viewFor(c).invites).toEqual({ sent: [], received: [] });
+    });
+
     it('rejects a move out of turn, on an occupied cell, or when not in a game', () => {
       const a = join('Alice');
       const b = join('Bob');
