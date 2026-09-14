@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.0](https://github.com/worgho2/tic-tac-toe-mcp-game/compare/v0.1.1...v0.2.0) (2026-09-14)
+
+
+### Features
+
+* game model with handles, multi-invite lobby and automatic rematch ([#5](https://github.com/worgho2/tic-tac-toe-mcp-game/issues/5)) ([af50c5f](https://github.com/worgho2/tic-tac-toe-mcp-game/commit/af50c5f2063b304d0c09500178c7ee1aaa354eaf))
+* pixel-art widget with Kenney tiles, modals, toasts and round overlay ([#7](https://github.com/worgho2/tic-tac-toe-mcp-game/issues/7)) ([ad8f840](https://github.com/worgho2/tic-tac-toe-mcp-game/commit/ad8f840945515328f01d74920972e87204f61a47))
+
+
+### Bug Fixes
+
+* storybook, ci build gate, modal focus trap and contrast test (PR 3 of 3) ([#8](https://github.com/worgho2/tic-tac-toe-mcp-game/issues/8)) ([1e2e7d9](https://github.com/worgho2/tic-tac-toe-mcp-game/commit/1e2e7d92400ef7984c44610d87389bdcabd5c29d))
+
+
+### Documentation
+
+* game design spec and PR 1 implementation plan ([#4](https://github.com/worgho2/tic-tac-toe-mcp-game/issues/4)) ([d4c5e5f](https://github.com/worgho2/tic-tac-toe-mcp-game/commit/d4c5e5f23e98aa5d97e8ecffd0922892ed020edb))
+
 ## [0.1.1](https://github.com/worgho2/tic-tac-toe-mcp-game/compare/v0.1.0...v0.1.1) (2026-09-14)
 
 
