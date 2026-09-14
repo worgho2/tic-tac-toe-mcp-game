@@ -59,13 +59,13 @@ Registered in `server.ts` via `registerAppTool` / `registerAppResource` from `@m
 ### Layers on the server
 
 - `game/game.ts`: pure rules (`createBoard`, `applyMove` immutable, `getResult`). No lobby knowledge.
-- `lobby/types.ts`: constants (`PRESENCE_TTL_MS = 10_000`, `INVITE_TTL_MS = 60_000`, `REMATCH_DELAY_MS = 3_000`) and the public view types (`PlayerView`, `GameView`, `InviteView`, `LobbyEvent`). Re-exported from `lobby.ts`.
+- `lobby/types.ts`: constants (`PRESENCE_TTL_MS = 10_000`, `INVITE_TTL_MS = 60_000`, `REMATCH_DELAY_MS = 3_000`, `MAX_NAME = 24`) and the public view types (`PlayerView`, `GameView`, `InviteView`, `LobbyEvent`). Re-exported from `lobby.ts`.
 - `lobby/lobby.ts`: in-memory `Lobby` (players, invites, matches, presence). Players get a `name#tag` handle (4 random digits, unique per name). Invites expire after 60 s and are auto-cancelled when a party enters a match. A match keeps a per-player score and restarts automatically 3 s after a round ends, with X and O swapped. All time-based transitions live in `sweep()`. The constructor takes injectable `genId`, `clock` and `genTag` so tests are deterministic. Mutations return an error string or `null`; `viewFor(playerId)` snapshots the `PlayerView` and drains that player's `events`.
 - `tools/handlers.ts`: one pure function per tool. Uniform contract: `lobby.touch(playerId)` → `lobby.sweep()` → mutate → return `viewFor(playerId)` with the transient `error` merged in. Every reply duplicates the payload in both `structuredContent` and a JSON `content[0].text` block. New tools should follow this exact shape.
 
 ### Widget
 
-`src/app/App.tsx` uses `useApp` from `@modelcontextprotocol/ext-apps/react` and switches screens on `view.phase` (`name` → `lobby` → `game`). `lib/tools.ts` wraps `callTool`, preferring `structuredContent` and falling back to parsing the text block.
+`src/app/App.tsx` uses `useApp` from `@modelcontextprotocol/ext-apps/react` and switches screens on `view.phase` (`name` → `lobby` → `game`). `lib/tools.ts` wraps `callTool`, preferring `structuredContent` and falling back to parsing the text block. `App.tsx` turns every entry of `view.events` and any mutation `error` outside the name phase into a transient banner (4 s); screens receive the view slice and callbacks only.
 
 **Polling, not push.** MCP Apps has no server→widget push, so `hooks/usePollView.ts` calls `get_state` every `POLL_INTERVAL_MS = 1500`. Keep the poll interval well under the presence TTL.
 
@@ -82,6 +82,6 @@ Widget tests are not covered by the vitest glob (`.test.ts` only, node environme
 
 ## Docs: what to trust
 
-`docs/superpowers/specs/2026-09-14-portfolio-restructure-design.md` (layout, tooling) and `docs/superpowers/specs/2026-09-14-game-design-and-use-cases.md` (game behaviour, `PlayerView`, visual system, Storybook) match the code; `docs/superpowers/plans/2026-09-14-game-model-and-tools.md` is the plan for the server half of the latter. The two `2026-06-18` specs and both `2026-06-18` plans predate the restructure (`packages/*`, npm workspaces, Node 20, `@modelcontextprotocol/sdk` v1, zod 3, a vanilla `widget.html`) and their game behaviour is superseded by the 2026-09-14 game spec; do not use them. The v1 spec (`…-mcp-game-design.md`, mcp-ui external URL + WebSocket) is fully retired.
+`docs/superpowers/specs/2026-09-14-portfolio-restructure-design.md` (layout, tooling) and `docs/superpowers/specs/2026-09-14-game-design-and-use-cases.md` (its "Decisions", "Use cases", "Server model" and "Tools" sections match the code; its "Widget", "Visual system" and "Storybook" sections describe PR 2 and PR 3, which have not landed yet) match the code; `docs/superpowers/plans/2026-09-14-game-model-and-tools.md` is the plan for the server half of the latter. The two `2026-06-18` specs and both `2026-06-18` plans predate the restructure (`packages/*`, npm workspaces, Node 20, `@modelcontextprotocol/sdk` v1, zod 3, a vanilla `widget.html`) and their game behaviour is superseded by the 2026-09-14 game spec; do not use them. The v1 spec (`…-mcp-game-design.md`, mcp-ui external URL + WebSocket) is fully retired.
 
 Reference implementations for MCP Apps patterns: the `ext-apps` repo examples `basic-server-react` (starter) and `system-monitor-server` (polling pattern).
