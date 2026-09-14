@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   quality:
-    name: Lint, typecheck, test, build
+    name: CI Code Quality Gate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -51,7 +51,7 @@ jobs:
         run: pnpm build
 
   docker:
-    name: Docker image builds
+    name: CI Docker Build Gate
     runs-on: ubuntu-latest
     # Release PRs only touch CHANGELOG/version; the image is built for real in release.yml.
     if: ${{ !startsWith(github.head_ref, 'release-please--') }}
