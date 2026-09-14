@@ -1,6 +1,8 @@
+import { handle } from '../lib/events';
 import type { GameView } from '../lib/tools';
 
 interface Props {
+  you: { name: string | null; tag: string | null };
   game: GameView;
   onMove: (cell: number) => void;
   onLeave: () => void;
@@ -8,18 +10,23 @@ interface Props {
 
 function statusLine(game: GameView): string {
   if (game.over) {
-    return game.result?.status === 'won' ? `${game.result.winner} wins!` : "It's a draw.";
+    if (game.result?.status === 'draw') return 'Draw. Next round starts in a moment…';
+    const youWon = game.result?.status === 'won' && game.result.winner === game.yourMark;
+    return youWon ? 'You win! Next round starts in a moment…' : 'You lose. Next round starts in a moment…';
   }
   return game.yourTurn ? 'Your turn' : "Opponent's turn";
 }
 
-export function GameBoard({ game, onMove, onLeave }: Props) {
+export function GameBoard({ you, game, onMove, onLeave }: Props) {
+  const yourHandle = you.name && you.tag ? handle(you.name, you.tag) : 'you';
   return (
     <section>
       <h2>
-        vs {game.opponentName} — you are {game.yourMark}
+        [{game.yourScore}] {yourHandle} x {handle(game.opponentName, game.opponentTag)} [{game.opponentScore}]
       </h2>
-      <p className="muted">{statusLine(game)}</p>
+      <p className="muted">
+        Round {game.round} · you are {game.yourMark} · {statusLine(game)}
+      </p>
       <div className="board">
         {game.board.map((mark, index) => (
           <button
@@ -36,13 +43,11 @@ export function GameBoard({ game, onMove, onLeave }: Props) {
           </button>
         ))}
       </div>
-      {game.over && (
-        <div className="row">
-          <button type="button" className="secondary" onClick={onLeave}>
-            Back to lobby
-          </button>
-        </div>
-      )}
+      <div className="row">
+        <button type="button" className="secondary" onClick={onLeave}>
+          Back to lobby
+        </button>
+      </div>
     </section>
   );
 }

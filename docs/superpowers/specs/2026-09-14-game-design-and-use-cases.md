@@ -195,7 +195,7 @@ The widget reports its content height to the host through the ext-apps size noti
 
 ## Testing
 
-- `lobby.test.ts`: tag assignment and collision retry; invite expiry via injected clock; per-pair uniqueness; cancel; accept while sender busy; auto-cancel of other invites on match start with events; rematch after 3 s with swapped marks; score on win, unchanged on draw; leave ends match and emits `opponent-left`; events drained once.
+- `lobby.test.ts`: tag assignment and collision retry; invite expiry via injected clock; per-pair uniqueness; cancel; stale accept after the sender entered another match returns "invite not found"; auto-cancel of other invites on match start with events; rematch after 3 s with swapped marks; score on win, unchanged on draw; leave ends match and emits `opponent-left`; events drained once.
 - `handlers.test.ts`: `cancel_invite` handler; reply shape for the new `PlayerView`.
 - `server.test.ts`: eight app-only tools with `visibility: ['app']`; `join_game` payload matches the new shape.
 - Widget: Vitest gets a second project (`src/app/**/*.test.tsx`, `jsdom`, Testing Library) for the search filter, countdown, overlay-per-round latch and screen rendering from fixture views. Fixtures are shared with the stories.

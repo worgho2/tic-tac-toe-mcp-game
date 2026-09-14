@@ -4,7 +4,16 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { Lobby } from './lobby/lobby.js';
 import { createServer, RESOURCE_URI } from './server.js';
 
-const APP_ONLY_TOOLS = ['set_name', 'get_state', 'invite', 'accept_invite', 'decline_invite', 'make_move', 'leave'];
+const APP_ONLY_TOOLS = [
+  'set_name',
+  'get_state',
+  'invite',
+  'accept_invite',
+  'decline_invite',
+  'cancel_invite',
+  'make_move',
+  'leave',
+];
 const FIXTURE_HTML = '<!DOCTYPE html><html><body>fixture</body></html>';
 
 async function connect() {
@@ -53,9 +62,20 @@ describe('MCP server contract', () => {
 
   it('join_game returns a player id and a view in structuredContent', async () => {
     const result = await client.callTool({ name: 'join_game', arguments: {} });
-    const structured = result.structuredContent as { playerId: string; view: { phase: string } };
+    const structured = result.structuredContent as {
+      playerId: string;
+      view: {
+        phase: string;
+        onlineCount: number;
+        invites: { sent: unknown[]; received: unknown[] };
+        events: unknown[];
+      };
+    };
     expect(structured.playerId).toEqual(expect.any(String));
     expect(structured.view.phase).toBe('name');
+    expect(structured.view.onlineCount).toBe(0);
+    expect(structured.view.invites).toEqual({ sent: [], received: [] });
+    expect(structured.view.events).toEqual([]);
   });
 
   it('validates app-only tool input', async () => {

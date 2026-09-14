@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { Lobby } from './lobby/lobby.js';
 import {
   handleAcceptInvite,
+  handleCancelInvite,
   handleDeclineInvite,
   handleGetState,
   handleInvite,
@@ -127,6 +128,18 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
       _meta: appOnly,
     },
     async (args) => handleDeclineInvite(lobby, args),
+  );
+
+  registerAppTool(
+    server,
+    'cancel_invite',
+    {
+      title: 'Cancel Invite',
+      description: 'Withdraw an invite you sent.',
+      inputSchema: z.object({ playerId: playerIdSchema, inviteId: z.string().min(1) }),
+      _meta: appOnly,
+    },
+    async (args) => handleCancelInvite(lobby, args),
   );
 
   registerAppTool(

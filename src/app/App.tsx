@@ -2,28 +2,51 @@ import { useApp } from '@modelcontextprotocol/ext-apps/react';
 import { useCallback, useEffect, useState } from 'react';
 import pkg from '../../package.json';
 import { GameBoard } from './components/GameBoard';
-import { InviteBanner } from './components/InviteBanner';
 import { LobbyScreen } from './components/LobbyScreen';
 import { NameScreen } from './components/NameScreen';
 import { useHostTheme } from './hooks/useHostTheme';
 import { usePollView } from './hooks/usePollView';
+import { eventText } from './lib/events';
 import { callTool, isJoinResult, isPlayerView, type PlayerView, parseTextBlock, type ToolName } from './lib/tools';
+
+const BANNER_MS = 4000;
+
+interface Banner {
+  id: number;
+  text: string;
+}
 
 export function TicTacToeApp() {
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [view, setView] = useState<PlayerView | null>(null);
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [theme, setTheme] = useState<string | undefined>(undefined);
   const [tornDown, setTornDown] = useState(false);
 
-  // Every tool reply is either the join result ({ playerId, view }) or a bare PlayerView.
-  const ingest = useCallback((data: unknown) => {
-    if (isJoinResult(data)) {
-      setPlayerId(data.playerId);
-      setView(data.view);
-    } else if (isPlayerView(data)) {
-      setView(data);
-    }
+  const showBanner = useCallback((text: string) => {
+    const id = Date.now() + Math.random();
+    setBanners((current) => [...current, { id, text }]);
+    window.setTimeout(() => setBanners((current) => current.filter((banner) => banner.id !== id)), BANNER_MS);
   }, []);
+
+  // Every tool reply is either the join result ({ playerId, view }) or a bare PlayerView.
+  const ingest = useCallback(
+    (data: unknown) => {
+      let next: PlayerView | null = null;
+      if (isJoinResult(data)) {
+        setPlayerId(data.playerId);
+        next = data.view;
+      } else if (isPlayerView(data)) {
+        next = data;
+      }
+      if (!next) return;
+      setView(next);
+      for (const event of next.events) showBanner(eventText(event));
+      // The name screen renders its error inline; everywhere else it is a banner.
+      if (next.error && next.phase !== 'name') showBanner(next.error);
+    },
+    [showBanner],
+  );
 
   const { app, error } = useApp({
     appInfo: { name: 'Tic-Tac-Toe', version: pkg.version },
@@ -71,19 +94,30 @@ export function TicTacToeApp() {
 
   return (
     <main>
-      {view.notice && <div className="banner">{view.notice}</div>}
-      {view.error && <div className="banner">{view.error}</div>}
-      {view.invite && (
-        <InviteBanner
-          fromName={view.invite.fromName}
-          onAccept={() => call('accept_invite', { inviteId: view.invite?.inviteId })}
-          onDecline={() => call('decline_invite', { inviteId: view.invite?.inviteId })}
+      {banners.map((banner) => (
+        <div className="banner" key={banner.id}>
+          {banner.text}
+        </div>
+      ))}
+      {view.phase === 'name' && (
+        <NameScreen onlineCount={view.onlineCount} error={view.error} onSubmit={(name) => call('set_name', { name })} />
+      )}
+      {view.phase === 'lobby' && (
+        <LobbyScreen
+          view={view}
+          onInvite={(targetId) => call('invite', { targetId })}
+          onAccept={(inviteId) => call('accept_invite', { inviteId })}
+          onDecline={(inviteId) => call('decline_invite', { inviteId })}
+          onCancel={(inviteId) => call('cancel_invite', { inviteId })}
         />
       )}
-      {view.phase === 'name' && <NameScreen onSubmit={(name) => call('set_name', { name })} />}
-      {view.phase === 'lobby' && <LobbyScreen view={view} onInvite={(targetId) => call('invite', { targetId })} />}
       {view.phase === 'game' && view.game && (
-        <GameBoard game={view.game} onMove={(cell) => call('make_move', { cell })} onLeave={() => call('leave', {})} />
+        <GameBoard
+          you={view.you}
+          game={view.game}
+          onMove={(cell) => call('make_move', { cell })}
+          onLeave={() => call('leave', {})}
+        />
       )}
     </main>
   );
