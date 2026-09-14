@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useId, useRef } from 'react';
+import { type KeyboardEvent, type ReactNode, useEffect, useId, useRef } from 'react';
 import { Button } from './Button';
 
 interface Props {
@@ -12,7 +12,13 @@ interface Props {
   onCancel: () => void;
 }
 
-/** In-widget confirmation. Hosts may swallow native dialogs, so this never uses window.confirm. */
+const FOCUSABLE =
+  'button:not(:disabled), [href], input:not(:disabled), select, textarea, [tabindex]:not([tabindex="-1"])';
+
+/**
+ * In-widget confirmation. Hosts may swallow native dialogs, so this never uses window.confirm.
+ * Focus starts on Cancel, Tab cycles inside the dialog, Escape cancels.
+ */
 export function Modal({
   title,
   children,
@@ -23,23 +29,43 @@ export function Modal({
   onCancel,
 }: Props) {
   const titleId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     cancelRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onCancel();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onCancel]);
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onCancel();
+      return;
+    }
+    if (event.key !== 'Tab' || !dialogRef.current) return;
+    const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE));
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
 
   return (
     <div className="modal-backdrop">
-      <div className="panel modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <div
+        ref={dialogRef}
+        className="panel modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onKeyDown={onKeyDown}
+      >
         <h2 id={titleId} className="modal__title">
           {title}
         </h2>
