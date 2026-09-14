@@ -1,7 +1,7 @@
 import type { App } from '@modelcontextprotocol/ext-apps';
 import type { PlayerView } from '../../server/lobby/lobby.js';
 
-export type { GameView, PlayerView, PublicPlayer } from '../../server/lobby/lobby.js';
+export type { GameView, InviteView, LobbyEvent, PlayerView, PublicPlayer } from '../../server/lobby/lobby.js';
 
 /** Reply of `join_game`; every other tool replies with a bare `PlayerView`. */
 export interface JoinResult {
@@ -9,7 +9,15 @@ export interface JoinResult {
   view: PlayerView;
 }
 
-export type ToolName = 'set_name' | 'get_state' | 'invite' | 'accept_invite' | 'decline_invite' | 'make_move' | 'leave';
+export type ToolName =
+  | 'set_name'
+  | 'get_state'
+  | 'invite'
+  | 'accept_invite'
+  | 'decline_invite'
+  | 'cancel_invite'
+  | 'make_move'
+  | 'leave';
 
 /**
  * Calls a server tool through the host and unwraps the payload: `structuredContent` when present,
