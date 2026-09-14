@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/worgho2/tic-tac-toe-mcp-game/compare/v0.2.0...v0.2.1) (2026-09-14)
+
+
+### Bug Fixes
+
+* recover the player identity after a widget reload ([#9](https://github.com/worgho2/tic-tac-toe-mcp-game/issues/9)) ([0f29b0b](https://github.com/worgho2/tic-tac-toe-mcp-game/commit/0f29b0b7f5bb68b17422bcdd3ea7130497f9312d))
+
 ## [0.2.0](https://github.com/worgho2/tic-tac-toe-mcp-game/compare/v0.1.1...v0.2.0) (2026-09-14)
 
 
