@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A two-player tic-tac-toe game rendered as an **MCP App** (`@modelcontextprotocol/ext-apps` 2.0, SEP-1865) inside an AI chat client. One Express server exposes a Streamable HTTP MCP endpoint (`/mcp`) plus a `GET /healthz`, and serves a self-contained React widget as a `ui://` resource. Deployed as a Docker image to GHCR; public instance at `https://tic-tac-toe-mcp-game.baziewi.cz/mcp`.
+A two-player tic-tac-toe game rendered as an **MCP App** (`@modelcontextprotocol/ext-apps` 2.0, SEP-1865) inside an AI chat client. One Express server exposes a Streamable HTTP MCP endpoint (`/mcp`) plus a `GET /healthz`, and serves a self-contained React widget as a `ui://` resource. Deployed as a Docker image to GHCR; public instance at `https://tic-tac-toe-mcp-game.obfsoft.party/mcp`.
 
 **This is a single package at the repo root.** Ignore the "npm workspaces" wording in the scaffold commit message: `pnpm-workspace.yaml` only carries pnpm settings (`engineStrict`, `onlyBuiltDependencies`) and declares no workspace globs. There is no `packages/` or `apps/` directory.
 

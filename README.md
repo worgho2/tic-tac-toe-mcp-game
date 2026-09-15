@@ -14,7 +14,7 @@ AI chat clients can now run small interactive apps inside a conversation, throug
 
 You ask your assistant to play tic-tac-toe. A lobby card appears in the chat. Your friend does the same in *their* chat, possibly in a completely different client. You see each other in the lobby, send an invite, and play on a shared board, turn by turn, each inside your own conversation.
 
-Everything runs on one tiny server at `tic-tac-toe-mcp-game.baziewi.cz`. It only knows the names players type in and forgets everything when a game ends.
+Everything runs on one tiny server at `tic-tac-toe-mcp-game.obfsoft.party`. It only knows the names players type in and forgets everything when a game ends.
 
 ## Play now
 
@@ -23,13 +23,13 @@ You need two people, each with an MCP-capable chat client. Both follow the same 
 **1. Connect the game server.** The address is:
 
 ```
-https://tic-tac-toe-mcp-game.baziewi.cz/mcp
+https://tic-tac-toe-mcp-game.obfsoft.party/mcp
 ```
 
 | Client | How to add it |
 |---|---|
 | Claude (web or desktop) | Settings → Connectors → *Add custom connector*, paste the address above. |
-| VS Code | `code --add-mcp '{"name":"tic-tac-toe","type":"http","url":"https://tic-tac-toe-mcp-game.baziewi.cz/mcp"}'` |
+| VS Code | `code --add-mcp '{"name":"tic-tac-toe","type":"http","url":"https://tic-tac-toe-mcp-game.obfsoft.party/mcp"}'` |
 | ChatGPT | Settings → Connectors → *Create* (developer mode), paste the address above. |
 | Other clients | Any host that supports MCP Apps over Streamable HTTP. See the [clients list](https://modelcontextprotocol.io/clients). |
 

@@ -4,7 +4,7 @@ Date: 2026-09-14
 
 ## Goal
 
-Turn the MCP Apps tic-tac-toe PoC into a presentable portfolio repository at `github.com/worgho2/tic-tac-toe-mcp-game`, hosted at `https://tic-tac-toe-mcp-game.baziewi.cz/mcp`, without changing game behaviour. Game rules, design and use cases are a separate follow-up.
+Turn the MCP Apps tic-tac-toe PoC into a presentable portfolio repository at `github.com/worgho2/tic-tac-toe-mcp-game`, hosted at `https://tic-tac-toe-mcp-game.obfsoft.party/mcp`, without changing game behaviour. Game rules, design and use cases are a separate follow-up.
 
 ## Decisions
 
