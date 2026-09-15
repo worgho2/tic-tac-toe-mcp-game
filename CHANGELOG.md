@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/worgho2/tic-tac-toe-mcp-game/compare/v0.2.1...v0.2.2) (2026-09-15)
+
+
+### Miscellaneous Chores
+
+* update server host ([8578587](https://github.com/worgho2/tic-tac-toe-mcp-game/commit/8578587694143de0e1f5b96319795dad44b4dc23))
+
 ## [0.2.1](https://github.com/worgho2/tic-tac-toe-mcp-game/compare/v0.2.0...v0.2.1) (2026-09-14)
 
 
