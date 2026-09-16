@@ -308,9 +308,10 @@ h3 {
   margin-top: 12px;
 }
 
+/* Below the close button (main padding 16px + ~30px button) so toasts never cover it. */
 .toasts {
   position: fixed;
-  top: 8px;
+  top: 44px;
   right: 8px;
   z-index: 20;
   display: flex;
