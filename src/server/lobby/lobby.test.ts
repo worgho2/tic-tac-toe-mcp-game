@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { INVITE_TTL_MS, Lobby, PRESENCE_TTL_MS, REMATCH_DELAY_MS } from './lobby.js';
+import { CLOSED_TTL_MS, INVITE_TTL_MS, Lobby, PRESENCE_TTL_MS, REMATCH_DELAY_MS } from './lobby.js';
 
 // Deterministic ids (id1, id2, …), tags (0001, 0002, …) and a controllable clock.
 function makeCounter(prefix = 'id') {
@@ -476,6 +476,55 @@ describe('Lobby', () => {
       lobby.sweep();
       expect(lobby.viewFor(a).phase).toBe('lobby');
       expect(lobby.viewFor(a).you.name).toBe('Alice');
+    });
+  });
+
+  describe('session close', () => {
+    it('close ends the match for the opponent, removes the player and reports the closed phase', () => {
+      const a = join('Alice');
+      const b = join('Bob');
+      startMatch(a, b);
+      expect(lobby.close(a)).toBeNull();
+      expect(lobby.viewFor(a).phase).toBe('closed');
+      const bv = lobby.viewFor(b);
+      expect(bv.phase).toBe('lobby');
+      expect(bv.events).toEqual([{ type: 'opponent-left' }]);
+      expect(bv.onlineCount).toBe(1);
+    });
+
+    it('close drops the pending invites of the player', () => {
+      const a = join('Alice');
+      const b = join('Bob');
+      inviteFrom(a, b);
+      lobby.close(a);
+      expect(lobby.viewFor(b).invites.received).toEqual([]);
+    });
+
+    it('a closed id is never re-created by reconnect', () => {
+      const a = join('Alice');
+      lobby.close(a);
+      expect(lobby.reconnect(a)).toBe(false);
+      expect(lobby.viewFor(a).phase).toBe('closed');
+      expect(lobby.register(a, 'Alice')).toMatch(/unknown player/i);
+      expect(lobby.viewFor(a).onlineCount).toBe(0);
+    });
+
+    it('close on an unknown id still records it', () => {
+      expect(lobby.close('ghost')).toBeNull();
+      expect(lobby.reconnect('ghost')).toBe(false);
+      expect(lobby.viewFor('ghost').phase).toBe('closed');
+    });
+
+    it('closed ids are forgotten after CLOSED_TTL_MS', () => {
+      const a = join('Alice');
+      lobby.close(a);
+      clock.advance(CLOSED_TTL_MS - 1);
+      lobby.sweep();
+      expect(lobby.viewFor(a).phase).toBe('closed');
+      clock.advance(1);
+      lobby.sweep();
+      expect(lobby.viewFor(a).phase).toBe('name');
+      expect(lobby.reconnect(a)).toBe(true);
     });
   });
 });

@@ -8,6 +8,7 @@ import {
   type Mark,
 } from '../game/game.js';
 import {
+  CLOSED_TTL_MS,
   type GameView,
   INVITE_TTL_MS,
   type InviteView,
@@ -67,6 +68,8 @@ export class Lobby {
   private players = new Map<PlayerId, PlayerState>();
   private invites = new Map<string, Invite>();
   private matches = new Map<string, Match>();
+  /** Ids closed by the player, with the close time. `reconnect` refuses them until `CLOSED_TTL_MS` passes. */
+  private closed = new Map<PlayerId, number>();
 
   constructor(
     private genId: () => string = defaultGenId,
@@ -96,6 +99,7 @@ export class Lobby {
       this.touch(id);
       return false;
     }
+    if (this.closed.has(id)) return false;
     this.players.set(id, { id, name: null, tag: null, matchId: null, lastSeen: this.clock(), events: [] });
     return true;
   }
@@ -114,6 +118,9 @@ export class Lobby {
     }
     for (const match of this.matches.values()) {
       if (match.endedAt !== null && now - match.endedAt >= REMATCH_DELAY_MS) this.startNextRound(match);
+    }
+    for (const [id, closedAt] of [...this.closed]) {
+      if (now - closedAt >= CLOSED_TTL_MS) this.closed.delete(id);
     }
   }
 
@@ -223,11 +230,21 @@ export class Lobby {
     return null;
   }
 
+  /**
+   * Ends the session for good: any match ends (the opponent gets `opponent-left`), invites are dropped,
+   * the player is removed and the id is remembered so a stale widget replaying it stays closed.
+   */
+  close(id: PlayerId): null {
+    this.removePlayer(id);
+    this.closed.set(id, this.clock());
+    return null;
+  }
+
   viewFor(id: PlayerId): PlayerView {
     const p = this.players.get(id);
     if (!p) {
       return {
-        phase: 'name',
+        phase: this.closed.has(id) ? 'closed' : 'name',
         you: { id, name: null, tag: null },
         onlineCount: this.onlineCount(),
         players: [],

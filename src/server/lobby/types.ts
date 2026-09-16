@@ -7,9 +7,11 @@ export const INVITE_TTL_MS = 60_000;
 /** A finished round stays visible this long before the next round starts. */
 export const REMATCH_DELAY_MS = 3_000;
 export const MAX_NAME = 24;
+/** A closed player id is remembered this long so a stale widget can never re-create it. */
+export const CLOSED_TTL_MS = 24 * 60 * 60 * 1000;
 
 export type PlayerId = string;
-export type Phase = 'name' | 'lobby' | 'game';
+export type Phase = 'name' | 'lobby' | 'game' | 'closed';
 
 export interface PublicPlayer {
   id: PlayerId;
