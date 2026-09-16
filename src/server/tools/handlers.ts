@@ -85,3 +85,9 @@ export function handleLeave(lobby: Lobby, args: { playerId: string }): ToolReply
   const error = lobby.leave(args.playerId);
   return viewWithError(lobby, args.playerId, error);
 }
+
+export function handleCloseSession(lobby: Lobby, args: { playerId: string }): ToolReply {
+  tick(lobby, args.playerId);
+  const error = lobby.close(args.playerId);
+  return viewWithError(lobby, args.playerId, error);
+}

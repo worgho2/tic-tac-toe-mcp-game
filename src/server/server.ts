@@ -8,6 +8,7 @@ import { Lobby } from './lobby/lobby.js';
 import {
   handleAcceptInvite,
   handleCancelInvite,
+  handleCloseSession,
   handleDeclineInvite,
   handleGetState,
   handleInvite,
@@ -165,6 +166,18 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
       _meta: appOnly,
     },
     async (args) => handleLeave(lobby, args),
+  );
+
+  registerAppTool(
+    server,
+    'close_session',
+    {
+      title: 'Close Session',
+      description: 'End this player session for good; the widget stops working until the game is opened again.',
+      inputSchema: z.object({ playerId: playerIdSchema }),
+      _meta: appOnly,
+    },
+    async (args) => handleCloseSession(lobby, args),
   );
 
   // The widget itself: a single self-contained HTML file bundled by Vite.

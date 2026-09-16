@@ -4,6 +4,7 @@ import { Lobby, PRESENCE_TTL_MS, REMATCH_DELAY_MS } from '../lobby/lobby.js';
 import {
   handleAcceptInvite,
   handleCancelInvite,
+  handleCloseSession,
   handleGetState,
   handleInvite,
   handleJoin,
@@ -122,5 +123,17 @@ describe('tool handlers', () => {
     const a = joinAs('Alice');
     const view = handleMove(lobby, { playerId: a, cell: 0 }).structuredContent as unknown as PlayerView;
     expect(view.error).toMatch(/not in a game/i);
+  });
+
+  it('handleCloseSession returns the closed phase and keeps it on later polls', () => {
+    const a = joinAs('Alice');
+    const b = joinAs('Bob');
+    const view = handleCloseSession(lobby, { playerId: a }).structuredContent as unknown as PlayerView;
+    expect(view.phase).toBe('closed');
+    expect(view.error).toBeNull();
+    expect(stateOf(a).phase).toBe('closed');
+    expect(stateOf(b).onlineCount).toBe(1);
+    const again = handleSetName(lobby, { playerId: a, name: 'Alice' }).structuredContent as unknown as PlayerView;
+    expect(again.phase).toBe('closed');
   });
 });

@@ -13,6 +13,7 @@ const APP_ONLY_TOOLS = [
   'cancel_invite',
   'make_move',
   'leave',
+  'close_session',
 ];
 const FIXTURE_HTML = '<!DOCTYPE html><html><body>fixture</body></html>';
 
