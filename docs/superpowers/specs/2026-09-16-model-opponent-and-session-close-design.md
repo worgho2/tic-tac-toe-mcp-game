@@ -85,7 +85,7 @@ Internal `PlayerState` gains `kind: PlayerKind` and `ownerId: PlayerId | null` (
 | `close_session` | app | `{ playerId }` | `close` |
 | `model_move` | model | `{ playerId, cell }` | `makeMove`, guarded |
 
-`model_move` is registered without `_meta.ui.resourceUri` so the call does not open another widget. Description for the model: "Play your move in a tic-tac-toe match against the user. Only call this when the game widget asks you to; use the playerId it gives you. Cells are 0-8, left to right, top to bottom." Handler: `tick`, then if the id is not a `kind: 'model'` player reply with `error: 'not a model player'`, else `makeMove` and reply with the model player's view. The reply gives the model the board, `yourTurn` and any error, so a wrong move is self-correcting.
+`model_move` is registered through the SDK's plain `server.registerTool` with no `_meta.ui` at all (`registerAppTool` requires one), so the call does not open another widget. Description for the model: "Play your move in a tic-tac-toe match against the user. Only call this when the game widget asks you to; use the playerId it gives you. Cells are 0-8, left to right, top to bottom." Handler: `sweep` only (no `reconnect`, which would re-create an unknown id as a human), then if the id is not a `kind: 'model'` player reply with `error: 'not a model player'`, else `makeMove` and reply with the model player's view. The reply gives the model the board, `yourTurn` and any error, so a wrong move is self-correcting.
 
 `join_game`'s description mentions that the user can also play against the assistant.
 
