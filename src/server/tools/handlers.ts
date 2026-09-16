@@ -91,3 +91,20 @@ export function handleCloseSession(lobby: Lobby, args: { playerId: string }): To
   const error = lobby.close(args.playerId);
   return viewWithError(lobby, args.playerId, error);
 }
+
+export function handlePlayVsModel(lobby: Lobby, args: { playerId: string }): ToolReply {
+  tick(lobby, args.playerId);
+  const error = lobby.startModelMatch(args.playerId);
+  return viewWithError(lobby, args.playerId, error);
+}
+
+/**
+ * Called by the model, not the widget. No `reconnect`: an unknown id must not be re-created as a human,
+ * and only a model player may move through here.
+ */
+export function handleModelMove(lobby: Lobby, args: { playerId: string; cell: number }): ToolReply {
+  lobby.sweep();
+  if (!lobby.isModelPlayer(args.playerId)) return viewWithError(lobby, args.playerId, 'not a model player');
+  const error = lobby.makeMove(args.playerId, args.cell);
+  return viewWithError(lobby, args.playerId, error);
+}

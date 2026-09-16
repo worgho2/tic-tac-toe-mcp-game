@@ -8,7 +8,9 @@ import {
   handleGetState,
   handleInvite,
   handleJoin,
+  handleModelMove,
   handleMove,
+  handlePlayVsModel,
   handleSetName,
   type JoinResult,
 } from './handlers.js';
@@ -135,5 +137,39 @@ describe('tool handlers', () => {
     expect(stateOf(b).onlineCount).toBe(1);
     const again = handleSetName(lobby, { playerId: a, name: 'Alice' }).structuredContent as unknown as PlayerView;
     expect(again.phase).toBe('closed');
+  });
+
+  it('handlePlayVsModel starts a game and handleModelMove answers with the model id', () => {
+    const a = joinAs('Alice');
+    const started = handlePlayVsModel(lobby, { playerId: a }).structuredContent as unknown as PlayerView;
+    expect(started.phase).toBe('game');
+    const modelId = started.game!.modelPlayerId!;
+    handleMove(lobby, { playerId: a, cell: 4 });
+    const reply = handleModelMove(lobby, { playerId: modelId, cell: 0 }).structuredContent as unknown as PlayerView;
+    expect(reply.error).toBeNull();
+    expect(reply.game).toMatchObject({ yourMark: 'O', yourTurn: false, opponentName: 'Alice' });
+    expect(stateOf(a).game!.board).toEqual(['O', null, null, null, 'X', null, null, null, null]);
+  });
+
+  it('handleModelMove reports a taken cell so the model can retry', () => {
+    const a = joinAs('Alice');
+    const modelId = (handlePlayVsModel(lobby, { playerId: a }).structuredContent as unknown as PlayerView).game!
+      .modelPlayerId!;
+    handleMove(lobby, { playerId: a, cell: 4 });
+    const reply = handleModelMove(lobby, { playerId: modelId, cell: 4 }).structuredContent as unknown as PlayerView;
+    expect(reply.error).toMatch(/taken/i);
+    expect(reply.game!.yourTurn).toBe(true);
+  });
+
+  it('handleModelMove refuses a human id and does not create a player for an unknown id', () => {
+    const a = joinAs('Alice');
+    handlePlayVsModel(lobby, { playerId: a });
+    const human = handleModelMove(lobby, { playerId: a, cell: 0 }).structuredContent as unknown as PlayerView;
+    expect(human.error).toBe('not a model player');
+    const ghost = handleModelMove(lobby, { playerId: 'ghost', cell: 0 }).structuredContent as unknown as PlayerView;
+    expect(ghost.error).toBe('not a model player');
+    expect(ghost.phase).toBe('name');
+    expect(lobby.isModelPlayer('ghost')).toBe(false);
+    expect(stateOf(a).onlineCount).toBe(1);
   });
 });

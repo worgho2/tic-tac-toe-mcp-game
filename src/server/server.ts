@@ -14,7 +14,9 @@ import {
   handleInvite,
   handleJoin,
   handleLeave,
+  handleModelMove,
   handleMove,
+  handlePlayVsModel,
   handleSetName,
 } from './tools/handlers.js';
 
@@ -62,11 +64,24 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
     'join_game',
     {
       title: 'Join Tic-Tac-Toe',
-      description: 'Open the tic-tac-toe lobby to find an opponent and play a game inside the chat.',
+      description:
+        'Open the tic-tac-toe lobby inside the chat. The user can invite another player or play against you, the assistant.',
       inputSchema: z.object({}),
       _meta: { ui: { resourceUri: RESOURCE_URI } },
     },
     async () => handleJoin(lobby),
+  );
+
+  // Second model-facing tool: how the assistant plays when the user chose "Play vs model".
+  server.registerTool(
+    'model_move',
+    {
+      title: 'Model Move',
+      description:
+        'Play your move in a tic-tac-toe match against the user. Only call this when the game widget asks you to; use the playerId it gives you. Cells are 0-8, left to right, top to bottom.',
+      inputSchema: z.object({ playerId: playerIdSchema, cell: z.number().int().min(0).max(8) }),
+    },
+    async (args) => handleModelMove(lobby, args),
   );
 
   // App-only tools: callable by the widget, hidden from the model.
@@ -178,6 +193,18 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
       _meta: appOnly,
     },
     async (args) => handleCloseSession(lobby, args),
+  );
+
+  registerAppTool(
+    server,
+    'play_vs_model',
+    {
+      title: 'Play vs Model',
+      description: 'Start a match against the assistant hosting the widget.',
+      inputSchema: z.object({ playerId: playerIdSchema }),
+      _meta: appOnly,
+    },
+    async (args) => handlePlayVsModel(lobby, args),
   );
 
   // The widget itself: a single self-contained HTML file bundled by Vite.
