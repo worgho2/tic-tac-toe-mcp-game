@@ -18,7 +18,8 @@ export type ToolName =
   | 'decline_invite'
   | 'cancel_invite'
   | 'make_move'
-  | 'leave';
+  | 'leave'
+  | 'close_session';
 
 /**
  * Calls a server tool through the host and unwraps the payload: `structuredContent` when present,

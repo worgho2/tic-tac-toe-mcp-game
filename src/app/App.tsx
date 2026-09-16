@@ -6,9 +6,11 @@ import { usePollView } from './hooks/usePollView';
 import { useToasts } from './hooks/useToasts';
 import { eventText } from './lib/events';
 import { callTool, isJoinResult, isPlayerView, type PlayerView, parseTextBlock, type ToolName } from './lib/tools';
+import { ClosedScreen } from './screens/ClosedScreen';
 import { GameScreen } from './screens/GameScreen';
 import { JoinScreen } from './screens/JoinScreen';
 import { LobbyScreen } from './screens/LobbyScreen';
+import { CloseButton } from './ui/CloseButton';
 import { ToastStack } from './ui/Toast';
 
 /** An error that only restates an event delivered in the same reply (the opponent left, so the move failed). */
@@ -62,7 +64,7 @@ export function TicTacToeApp() {
     if (app) setTheme(app.getHostContext()?.theme);
   }, [app]);
   useHostTheme(app, theme);
-  usePollView(app, tornDown ? null : playerId, ingest);
+  usePollView(app, tornDown || view?.phase === 'closed' ? null : playerId, ingest);
 
   const call = useCallback(
     async (name: ToolName, args: Record<string, unknown>) => {
@@ -89,6 +91,10 @@ export function TicTacToeApp() {
   return (
     <main>
       <ToastStack toasts={toasts} onDismiss={dismiss} />
+      {view.phase !== 'closed' && (
+        <CloseButton inMatch={view.phase === 'game'} onClose={() => call('close_session', {})} />
+      )}
+      {view.phase === 'closed' && <ClosedScreen />}
       {view.phase === 'name' && (
         <JoinScreen onlineCount={view.onlineCount} error={view.error} onSubmit={(name) => call('set_name', { name })} />
       )}

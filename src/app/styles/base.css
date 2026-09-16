@@ -22,6 +22,11 @@ body {
   margin: 0 auto;
 }
 
+main {
+  position: relative;
+  padding-top: 28px;
+}
+
 h2,
 h3,
 p,
@@ -183,6 +188,14 @@ h3 {
   filter: brightness(0.9);
 }
 
+.close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 10;
+  padding: 2px 4px;
+}
+
 .input {
   font: inherit;
   color: var(--input-fg);
@@ -318,6 +331,12 @@ h3 {
 }
 
 /* ---- Screens ---- */
+
+.closed {
+  max-width: 360px;
+  margin: 44px auto 0;
+  text-align: center;
+}
 
 .join {
   max-width: 360px;
