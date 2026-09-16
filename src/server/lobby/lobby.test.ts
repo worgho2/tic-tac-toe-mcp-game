@@ -420,6 +420,103 @@ describe('Lobby', () => {
       const a = join('Alice');
       expect(lobby.leave(a)).toBeNull();
     });
+
+    describe('model opponent', () => {
+      it('startModelMatch puts the player in a game against Model#AI as X', () => {
+        const a = join('Alice');
+        expect(lobby.startModelMatch(a)).toBeNull();
+        const av = lobby.viewFor(a);
+        expect(av.phase).toBe('game');
+        expect(av.game).toMatchObject({
+          round: 1,
+          yourMark: 'X',
+          yourTurn: true,
+          opponentName: 'Model',
+          opponentTag: 'AI',
+          opponentKind: 'model',
+          yourScore: 0,
+          opponentScore: 0,
+        });
+        expect(av.game!.modelPlayerId).toEqual(expect.any(String));
+        expect(lobby.isModelPlayer(av.game!.modelPlayerId!)).toBe(true);
+        expect(lobby.isModelPlayer(a)).toBe(false);
+      });
+
+      it('requires a registered player who is not in a match', () => {
+        const c = lobby.connect();
+        expect(lobby.startModelMatch(c)).toMatch(/register first/i);
+        const a = join('Alice');
+        lobby.startModelMatch(a);
+        expect(lobby.startModelMatch(a)).toMatch(/already in a match/i);
+      });
+
+      it('the model player is hidden from the lobby and cannot be invited', () => {
+        const a = join('Alice');
+        const b = join('Bob');
+        lobby.startModelMatch(a);
+        const modelId = lobby.viewFor(a).game!.modelPlayerId!;
+        const bv = lobby.viewFor(b);
+        expect(bv.onlineCount).toBe(2);
+        expect(bv.players).toEqual([{ id: a, name: 'Alice', tag: '0001', status: 'busy' }]);
+        expect(lobby.invite(b, modelId)).toMatch(/not available/i);
+      });
+
+      it('starting a model match auto-cancels pending invites like a human match', () => {
+        const a = join('Alice');
+        const b = join('Bob');
+        inviteFrom(a, b);
+        lobby.startModelMatch(a);
+        const bv = lobby.viewFor(b);
+        expect(bv.invites.received).toEqual([]);
+        expect(bv.events).toEqual([{ type: 'invite-cancelled', name: 'Alice', tag: '0001', reason: 'in-match' }]);
+      });
+
+      it('the model moves through makeMove with its own id; rounds, score and rematch work as usual', () => {
+        const a = join('Alice');
+        lobby.startModelMatch(a);
+        const m = lobby.viewFor(a).game!.modelPlayerId!;
+        expect(lobby.makeMove(m, 0)).toMatch(/turn/i);
+        playXWin(a, m);
+        expect(lobby.viewFor(a).game).toMatchObject({ over: true, yourScore: 1, opponentScore: 0 });
+        expect(lobby.viewFor(m).game).toMatchObject({
+          yourScore: 0,
+          opponentScore: 1,
+          opponentName: 'Alice',
+          opponentKind: 'human',
+          modelPlayerId: null,
+        });
+        clock.advance(REMATCH_DELAY_MS);
+        lobby.sweep();
+        expect(lobby.viewFor(a).game).toMatchObject({ round: 2, yourMark: 'O', yourTurn: false });
+        expect(lobby.makeMove(m, 4)).toBeNull();
+      });
+
+      it('the model player is exempt from presence but dies with the match', () => {
+        const a = join('Alice');
+        lobby.startModelMatch(a);
+        const m = lobby.viewFor(a).game!.modelPlayerId!;
+        clock.advance(PRESENCE_TTL_MS - 1);
+        lobby.touch(a);
+        clock.advance(2);
+        lobby.sweep();
+        expect(lobby.viewFor(a).phase).toBe('game');
+        expect(lobby.makeMove(m, 0)).toMatch(/turn/i);
+        lobby.leave(a);
+        expect(lobby.viewFor(a).phase).toBe('lobby');
+        expect(lobby.isModelPlayer(m)).toBe(false);
+        expect(lobby.makeMove(m, 0)).toMatch(/not in a game/i);
+      });
+
+      it('sweeping the owner removes the model player too', () => {
+        const a = join('Alice');
+        lobby.startModelMatch(a);
+        const m = lobby.viewFor(a).game!.modelPlayerId!;
+        clock.advance(PRESENCE_TTL_MS + 1);
+        lobby.sweep();
+        expect(lobby.viewFor('nobody').onlineCount).toBe(0);
+        expect(lobby.isModelPlayer(m)).toBe(false);
+      });
+    });
   });
 
   describe('presence', () => {

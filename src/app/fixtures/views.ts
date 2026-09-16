@@ -27,6 +27,8 @@ export const gameYourTurn: GameView = {
   opponentScore: 0,
   over: false,
   result: null,
+  opponentKind: 'human',
+  modelPlayerId: null,
 };
 
 export const gameOpponentTurn: GameView = {
@@ -53,6 +55,17 @@ export const gameDraw: GameView = {
   yourTurn: false,
   over: true,
   result: { status: 'draw' },
+};
+
+/** Round 1 against the assistant: you played the centre and the model has not answered yet. */
+export const gameVsModelWaiting: GameView = {
+  ...gameYourTurn,
+  yourTurn: false,
+  board: [null, null, null, null, 'X', null, null, null, null],
+  opponentName: 'Model',
+  opponentTag: 'AI',
+  opponentKind: 'model',
+  modelPlayerId: 'bot1',
 };
 
 export function view(overrides: Partial<PlayerView> = {}): PlayerView {
