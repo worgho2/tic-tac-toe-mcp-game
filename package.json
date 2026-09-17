@@ -1,6 +1,6 @@
 {
   "name": "tic-tac-toe-mcp-game",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Two-player tic-tac-toe that renders as an interactive MCP App inside your AI chat client.",
   "private": true,
   "type": "module",
