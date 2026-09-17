@@ -41,6 +41,10 @@ https://tic-tac-toe-mcp-game.obfsoft.party/mcp
 
 **5. Rematch.** When a round ends the next one starts by itself after a moment, with X and O swapped and the score kept. *Back to lobby* ends the match for both of you.
 
+**Play against your assistant.** Alone? Hit *Play vs model* in the lobby. After each of your moves the widget posts a short message in the chat asking the assistant for its move, and the assistant answers by calling the `model_move` tool. The server only checks the rules; how well the assistant plays is entirely up to the model. If it goes quiet, *Ask again* re-sends the request. This needs a client that lets widgets post messages (Claude, ChatGPT and VS Code do).
+
+**Done for now?** The × in the corner closes your session for good. Reopening the game in that chat needs a fresh `join_game`, which prevents a stale card from lingering as a second player.
+
 ```mermaid
 sequenceDiagram
     participant A as Player A (Claude)
@@ -60,9 +64,9 @@ sequenceDiagram
 
 ## How does it work?
 
-- **One tool the assistant sees.** `join_game` is the only tool exposed to the model. Calling it returns a player id and tells the host to render the game widget.
+- **Two tools the assistant sees.** `join_game` opens the widget; `model_move` lets the assistant play when you asked it to.
 - **A widget in a sandbox.** The board is a single self-contained HTML file served by the server as a `ui://` resource. The host renders it in a sandboxed iframe and relays messages between the widget and the server.
-- **Seven tools the widget uses.** Setting a name, inviting, accepting, moving and leaving are tools too, but they are marked *app-only*, so the assistant never sees them and cannot play on your behalf.
+- **Ten tools the widget uses.** Setting a name, inviting, accepting, moving and leaving are tools too, but they are marked *app-only*, so the assistant never sees them and cannot play on your behalf.
 - **Polling, not push.** MCP Apps has no server-to-widget push channel yet, so the widget asks for the latest state every 1.5 seconds. That is why an opponent's move takes a moment to appear.
 - **Nothing is stored.** The lobby lives in memory on a single server. Players who go quiet for 30 seconds are dropped (a reload just asks for your name again), and a finished game is forgotten once both players leave.
 
