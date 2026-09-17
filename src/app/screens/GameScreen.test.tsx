@@ -1,7 +1,15 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { gameDraw, gameLost, gameOpponentTurn, gameWon, gameYourTurn, you } from '../fixtures/views';
+import {
+  gameDraw,
+  gameLost,
+  gameOpponentTurn,
+  gameVsModelWaiting,
+  gameWon,
+  gameYourTurn,
+  you,
+} from '../fixtures/views';
 import type { GameView } from '../lib/tools';
 import { GameScreen } from './GameScreen';
 
@@ -62,5 +70,57 @@ describe('GameScreen', () => {
     await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Leave' }));
     expect(onLeave).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('shows the model wait state and offers Ask again once stale', async () => {
+    const user = userEvent.setup();
+    const onResend = vi.fn();
+    const { rerender } = render(
+      <GameScreen
+        you={you}
+        game={gameVsModelWaiting}
+        onMove={vi.fn()}
+        onLeave={vi.fn()}
+        modelTurn={{ stale: false, onResend }}
+      />,
+    );
+    expect(screen.getByText('Round 1 · you are X · Waiting for the model…')).toBeInTheDocument();
+    expect(screen.getByText(/Model#AI/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Ask again' })).not.toBeInTheDocument();
+    rerender(
+      <GameScreen
+        you={you}
+        game={gameVsModelWaiting}
+        onMove={vi.fn()}
+        onLeave={vi.fn()}
+        modelTurn={{ stale: true, onResend }}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: 'Ask again' }));
+    expect(onResend).toHaveBeenCalledTimes(1);
+  });
+
+  it('never shows Ask again on your turn or after the round', () => {
+    const modelTurn = { stale: true, onResend: vi.fn() };
+    const { rerender } = render(
+      <GameScreen
+        you={you}
+        game={{ ...gameVsModelWaiting, yourTurn: true }}
+        onMove={vi.fn()}
+        onLeave={vi.fn()}
+        modelTurn={modelTurn}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Ask again' })).not.toBeInTheDocument();
+    rerender(
+      <GameScreen
+        you={you}
+        game={{ ...gameVsModelWaiting, over: true, yourTurn: false }}
+        onMove={vi.fn()}
+        onLeave={vi.fn()}
+        modelTurn={modelTurn}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Ask again' })).not.toBeInTheDocument();
   });
 });

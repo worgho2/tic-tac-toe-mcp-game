@@ -7,9 +7,18 @@ export const INVITE_TTL_MS = 60_000;
 /** A finished round stays visible this long before the next round starts. */
 export const REMATCH_DELAY_MS = 3_000;
 export const MAX_NAME = 24;
+/** Handle of the assistant-driven opponent. */
+export const MODEL_NAME = 'Model';
+export const MODEL_TAG = 'AI';
+
+export type PlayerKind = 'human' | 'model';
+/** A closed player id is remembered this long so a stale widget can never re-create it. */
+export const CLOSED_TTL_MS = 24 * 60 * 60 * 1000;
+/** Upper bound on remembered closed ids; the oldest is evicted first. Protects a public endpoint from unbounded growth. */
+export const MAX_CLOSED_IDS = 10_000;
 
 export type PlayerId = string;
-export type Phase = 'name' | 'lobby' | 'game';
+export type Phase = 'name' | 'lobby' | 'game' | 'closed';
 
 export interface PublicPlayer {
   id: PlayerId;
@@ -41,6 +50,9 @@ export interface GameView {
   /** True during the pause between a finished round and the next one. */
   over: boolean;
   result: GameResult | null;
+  opponentKind: PlayerKind;
+  /** Id the widget hands to the model so it can call `model_move`; null in human matches. */
+  modelPlayerId: PlayerId | null;
 }
 
 export type LobbyEvent =

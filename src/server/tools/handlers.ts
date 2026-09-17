@@ -85,3 +85,29 @@ export function handleLeave(lobby: Lobby, args: { playerId: string }): ToolReply
   const error = lobby.leave(args.playerId);
   return viewWithError(lobby, args.playerId, error);
 }
+
+export function handleCloseSession(lobby: Lobby, args: { playerId: string }): ToolReply {
+  tick(lobby, args.playerId);
+  const error = lobby.close(args.playerId);
+  return viewWithError(lobby, args.playerId, error);
+}
+
+export function handlePlayVsModel(lobby: Lobby, args: { playerId: string }): ToolReply {
+  tick(lobby, args.playerId);
+  const error = lobby.startModelMatch(args.playerId);
+  return viewWithError(lobby, args.playerId, error);
+}
+
+/**
+ * Called by the model, not the widget. No `reconnect`: an unknown id must not be re-created as a human,
+ * and only a model player may move through here. The guard must not build a view: `args.playerId` could
+ * be a human's id (e.g. a model that reused the `playerId` from the `join_game` reply instead of the one
+ * the widget handed it for this match), and `viewFor` would both return that human's private view and
+ * drain their pending events, silently swallowing toasts the widget hasn't shown yet.
+ */
+export function handleModelMove(lobby: Lobby, args: { playerId: string; cell: number }): ToolReply {
+  lobby.sweep();
+  if (!lobby.isModelPlayer(args.playerId)) return reply({ error: 'not a model player' });
+  const error = lobby.makeMove(args.playerId, args.cell);
+  return viewWithError(lobby, args.playerId, error);
+}

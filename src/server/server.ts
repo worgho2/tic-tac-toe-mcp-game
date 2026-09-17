@@ -8,12 +8,15 @@ import { Lobby } from './lobby/lobby.js';
 import {
   handleAcceptInvite,
   handleCancelInvite,
+  handleCloseSession,
   handleDeclineInvite,
   handleGetState,
   handleInvite,
   handleJoin,
   handleLeave,
+  handleModelMove,
   handleMove,
+  handlePlayVsModel,
   handleSetName,
 } from './tools/handlers.js';
 
@@ -46,8 +49,9 @@ export interface CreateServerOptions {
 const playerIdSchema = z.string().regex(/^[a-z0-9]{1,32}$/);
 
 /**
- * Creates an MCP server exposing one model-facing tool (`join_game`, which opens the widget) and a set
- * of app-only tools the widget uses to drive the lobby and the game.
+ * Creates an MCP server exposing two model-facing tools (`join_game`, which opens the widget, and
+ * `model_move`, the assistant's move in a match against the user) and a set of app-only tools the
+ * widget uses to drive the lobby and the game.
  */
 export function createServer(options: CreateServerOptions = {}): McpServer {
   const lobby = options.lobby ?? sharedLobby;
@@ -61,11 +65,24 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
     'join_game',
     {
       title: 'Join Tic-Tac-Toe',
-      description: 'Open the tic-tac-toe lobby to find an opponent and play a game inside the chat.',
+      description:
+        'Open the tic-tac-toe lobby inside the chat. The user can invite another player or play against you, the assistant.',
       inputSchema: z.object({}),
       _meta: { ui: { resourceUri: RESOURCE_URI } },
     },
     async () => handleJoin(lobby),
+  );
+
+  // Second model-facing tool: how the assistant plays when the user chose "Play vs model".
+  server.registerTool(
+    'model_move',
+    {
+      title: 'Model Move',
+      description:
+        "Play your move in a tic-tac-toe match against the user. Only call this when the game widget asks you to, and use the playerId from the widget's message, not the one returned by join_game. Cells are 0-8, left to right, top to bottom.",
+      inputSchema: z.object({ playerId: playerIdSchema, cell: z.number().int().min(0).max(8) }),
+    },
+    async (args) => handleModelMove(lobby, args),
   );
 
   // App-only tools: callable by the widget, hidden from the model.
@@ -165,6 +182,30 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
       _meta: appOnly,
     },
     async (args) => handleLeave(lobby, args),
+  );
+
+  registerAppTool(
+    server,
+    'close_session',
+    {
+      title: 'Close Session',
+      description: 'End this player session for good; the widget stops working until the game is opened again.',
+      inputSchema: z.object({ playerId: playerIdSchema }),
+      _meta: appOnly,
+    },
+    async (args) => handleCloseSession(lobby, args),
+  );
+
+  registerAppTool(
+    server,
+    'play_vs_model',
+    {
+      title: 'Play vs Model',
+      description: 'Start a match against the assistant hosting the widget.',
+      inputSchema: z.object({ playerId: playerIdSchema }),
+      _meta: appOnly,
+    },
+    async (args) => handlePlayVsModel(lobby, args),
   );
 
   // The widget itself: a single self-contained HTML file bundled by Vite.

@@ -22,6 +22,11 @@ body {
   margin: 0 auto;
 }
 
+main {
+  position: relative;
+  padding-top: 28px;
+}
+
 h2,
 h3,
 p,
@@ -183,6 +188,14 @@ h3 {
   filter: brightness(0.9);
 }
 
+.close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 10;
+  padding: 2px 4px;
+}
+
 .input {
   font: inherit;
   color: var(--input-fg);
@@ -295,9 +308,10 @@ h3 {
   margin-top: 12px;
 }
 
+/* Below the close button (main padding 16px + ~30px button) so toasts never cover it. */
 .toasts {
   position: fixed;
-  top: 8px;
+  top: 44px;
   right: 8px;
   z-index: 20;
   display: flex;
@@ -319,7 +333,8 @@ h3 {
 
 /* ---- Screens ---- */
 
-.join {
+.join,
+.closed {
   max-width: 360px;
   margin: 44px auto 0;
   text-align: center;
@@ -356,6 +371,10 @@ h3 {
   margin: 8px 0;
 }
 
+.lobby__model {
+  margin-bottom: 8px;
+}
+
 .game {
   text-align: center;
   margin-top: 8px;
@@ -382,6 +401,10 @@ h3 {
 
 .game__status {
   margin: 8px 0 12px;
+}
+
+.game__resend {
+  margin-bottom: 12px;
 }
 
 .board-wrap {

@@ -4,10 +4,14 @@ import { Lobby, PRESENCE_TTL_MS, REMATCH_DELAY_MS } from '../lobby/lobby.js';
 import {
   handleAcceptInvite,
   handleCancelInvite,
+  handleCloseSession,
+  handleDeclineInvite,
   handleGetState,
   handleInvite,
   handleJoin,
+  handleModelMove,
   handleMove,
+  handlePlayVsModel,
   handleSetName,
   type JoinResult,
 } from './handlers.js';
@@ -122,5 +126,60 @@ describe('tool handlers', () => {
     const a = joinAs('Alice');
     const view = handleMove(lobby, { playerId: a, cell: 0 }).structuredContent as unknown as PlayerView;
     expect(view.error).toMatch(/not in a game/i);
+  });
+
+  it('handleCloseSession returns the closed phase and keeps it on later polls', () => {
+    const a = joinAs('Alice');
+    const b = joinAs('Bob');
+    const view = handleCloseSession(lobby, { playerId: a }).structuredContent as unknown as PlayerView;
+    expect(view.phase).toBe('closed');
+    expect(view.error).toBeNull();
+    expect(stateOf(a).phase).toBe('closed');
+    expect(stateOf(b).onlineCount).toBe(1);
+    const again = handleSetName(lobby, { playerId: a, name: 'Alice' }).structuredContent as unknown as PlayerView;
+    expect(again.phase).toBe('closed');
+  });
+
+  it('handlePlayVsModel starts a game and handleModelMove answers with the model id', () => {
+    const a = joinAs('Alice');
+    const started = handlePlayVsModel(lobby, { playerId: a }).structuredContent as unknown as PlayerView;
+    expect(started.phase).toBe('game');
+    const modelId = started.game!.modelPlayerId!;
+    handleMove(lobby, { playerId: a, cell: 4 });
+    const reply = handleModelMove(lobby, { playerId: modelId, cell: 0 }).structuredContent as unknown as PlayerView;
+    expect(reply.error).toBeNull();
+    expect(reply.game).toMatchObject({ yourMark: 'O', yourTurn: false, opponentName: 'Alice' });
+    expect(stateOf(a).game!.board).toEqual(['O', null, null, null, 'X', null, null, null, null]);
+  });
+
+  it('handleModelMove reports a taken cell so the model can retry', () => {
+    const a = joinAs('Alice');
+    const modelId = (handlePlayVsModel(lobby, { playerId: a }).structuredContent as unknown as PlayerView).game!
+      .modelPlayerId!;
+    handleMove(lobby, { playerId: a, cell: 4 });
+    const reply = handleModelMove(lobby, { playerId: modelId, cell: 4 }).structuredContent as unknown as PlayerView;
+    expect(reply.error).toMatch(/taken/i);
+    expect(reply.game!.yourTurn).toBe(true);
+  });
+
+  it('handleModelMove refuses a human id and does not create a player for an unknown id', () => {
+    const a = joinAs('Alice');
+    handlePlayVsModel(lobby, { playerId: a });
+    const human = handleModelMove(lobby, { playerId: a, cell: 0 }).structuredContent;
+    expect(human).toEqual({ error: 'not a model player' });
+    const ghost = handleModelMove(lobby, { playerId: 'ghost', cell: 0 }).structuredContent;
+    expect(ghost).toEqual({ error: 'not a model player' });
+    expect(lobby.isModelPlayer('ghost')).toBe(false);
+    expect(stateOf(a).onlineCount).toBe(1);
+  });
+
+  it("handleModelMove does not drain the target player's pending events when it refuses their id", () => {
+    const a = joinAs('Alice');
+    const b = joinAs('Bob');
+    handleInvite(lobby, { playerId: b, targetId: a });
+    handleDeclineInvite(lobby, { playerId: a, inviteId: stateOf(a).invites.received[0].inviteId });
+    const reply = handleModelMove(lobby, { playerId: b, cell: 0 }).structuredContent;
+    expect(reply).toEqual({ error: 'not a model player' });
+    expect(stateOf(b).events).toEqual([{ type: 'invite-declined', name: 'Alice', tag: expect.any(String) }]);
   });
 });

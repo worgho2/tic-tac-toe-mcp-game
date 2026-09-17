@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emptyInvites, players, received, sent, you } from '../fixtures/views';
@@ -7,13 +7,20 @@ import { LobbyScreen } from './LobbyScreen';
 type Props = Parameters<typeof LobbyScreen>[0];
 
 function renderLobby(overrides: Partial<Props> = {}) {
-  const handlers = { onInvite: vi.fn(), onAccept: vi.fn(), onDecline: vi.fn(), onCancel: vi.fn() };
+  const handlers = {
+    onInvite: vi.fn(),
+    onAccept: vi.fn(),
+    onDecline: vi.fn(),
+    onCancel: vi.fn(),
+    onPlayModel: vi.fn(),
+  };
   render(
     <LobbyScreen
       you={you}
       onlineCount={4}
       players={players}
       invites={{ sent, received }}
+      canPlayModel={false}
       {...handlers}
       {...overrides}
     />,
@@ -95,5 +102,15 @@ describe('LobbyScreen', () => {
     renderLobby({ players: [], invites: emptyInvites, onlineCount: 1 });
     expect(screen.getByText('No one else is online yet')).toBeInTheDocument();
     expect(screen.getAllByText('No invites')).toHaveLength(2);
+  });
+
+  it('offers Play vs model only when the host supports it', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderLobby();
+    expect(screen.queryByRole('button', { name: 'Play vs model' })).not.toBeInTheDocument();
+    cleanup();
+    const handlers = renderLobby({ canPlayModel: true });
+    await user.click(screen.getByRole('button', { name: 'Play vs model' }));
+    expect(handlers.onPlayModel).toHaveBeenCalledTimes(1);
   });
 });

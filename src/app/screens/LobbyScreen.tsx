@@ -19,6 +19,9 @@ interface Props {
   onAccept: (inviteId: string) => void;
   onDecline: (inviteId: string) => void;
   onCancel: (inviteId: string) => void;
+  /** True when the host accepts `ui/message`, which the model opponent needs. */
+  canPlayModel: boolean;
+  onPlayModel: () => void;
 }
 
 function Countdown({ expiresIn }: { expiresIn: number }) {
@@ -36,7 +39,18 @@ function InviteCard({ invite, children }: { invite: InviteView; children: ReactN
   );
 }
 
-export function LobbyScreen({ you, onlineCount, players, invites, onInvite, onAccept, onDecline, onCancel }: Props) {
+export function LobbyScreen({
+  you,
+  onlineCount,
+  players,
+  invites,
+  onInvite,
+  onAccept,
+  onDecline,
+  onCancel,
+  canPlayModel,
+  onPlayModel,
+}: Props) {
   const [query, setQuery] = useState('');
   const [target, setTarget] = useState<PublicPlayer | null>(null);
 
@@ -59,6 +73,11 @@ export function LobbyScreen({ you, onlineCount, players, invites, onInvite, onAc
         <p className="muted">
           You are {yourHandle} · {onlineCount} online
         </p>
+        {canPlayModel && (
+          <Button className="lobby__model" onClick={onPlayModel}>
+            Play vs model
+          </Button>
+        )}
         <Input
           className="lobby__search"
           value={query}

@@ -1,7 +1,7 @@
 # Game design and use cases
 
 Date: 2026-09-14
-Status: approved design, supersedes the game-behaviour parts of the two `2026-06-18` specs.
+Status: approved design, supersedes the game-behaviour parts of the two `2026-06-18` specs. Extended by `2026-09-16-model-opponent-and-session-close-design.md` (model opponent, session close).
 
 ## Goal
 

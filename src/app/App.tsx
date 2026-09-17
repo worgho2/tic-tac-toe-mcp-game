@@ -1,14 +1,17 @@
 import { useApp } from '@modelcontextprotocol/ext-apps/react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import pkg from '../../package.json';
 import { useHostTheme } from './hooks/useHostTheme';
+import { useModelTurn } from './hooks/useModelTurn';
 import { usePollView } from './hooks/usePollView';
 import { useToasts } from './hooks/useToasts';
 import { eventText } from './lib/events';
 import { callTool, isJoinResult, isPlayerView, type PlayerView, parseTextBlock, type ToolName } from './lib/tools';
+import { ClosedScreen } from './screens/ClosedScreen';
 import { GameScreen } from './screens/GameScreen';
 import { JoinScreen } from './screens/JoinScreen';
 import { LobbyScreen } from './screens/LobbyScreen';
+import { CloseButton } from './ui/CloseButton';
 import { ToastStack } from './ui/Toast';
 
 /** An error that only restates an event delivered in the same reply (the opponent left, so the move failed). */
@@ -18,6 +21,7 @@ export function redundantError(view: PlayerView): boolean {
 
 export function TicTacToeApp() {
   const [playerId, setPlayerId] = useState<string | null>(null);
+  const playerIdRef = useRef<string | null>(null);
   const [view, setView] = useState<PlayerView | null>(null);
   const [theme, setTheme] = useState<string | undefined>(undefined);
   const [tornDown, setTornDown] = useState(false);
@@ -29,11 +33,16 @@ export function TicTacToeApp() {
       let next: PlayerView | null = null;
       if (isJoinResult(data)) {
         setPlayerId(data.playerId);
+        playerIdRef.current = data.playerId;
         next = data.view;
       } else if (isPlayerView(data)) {
         next = data;
       }
       if (!next) return;
+      // A reply for another player (e.g. a future host routing a model_move result back to this
+      // widget) must never be rendered as if it were ours. A ref is used (not the playerId state)
+      // because onAppCreated captures the first ingest closure, in which playerId is always null.
+      if (playerIdRef.current && next.you.id !== playerIdRef.current) return;
       setView(next);
       for (const event of next.events) push(eventText(event));
       // The join screen renders its error inline; everywhere else it is a toast.
@@ -62,7 +71,9 @@ export function TicTacToeApp() {
     if (app) setTheme(app.getHostContext()?.theme);
   }, [app]);
   useHostTheme(app, theme);
-  usePollView(app, tornDown ? null : playerId, ingest);
+  usePollView(app, tornDown || view?.phase === 'closed' ? null : playerId, ingest);
+  const { stale, resend } = useModelTurn(app, view?.game ?? null);
+  const canPlayModel = Boolean(app?.getHostCapabilities()?.message);
 
   const call = useCallback(
     async (name: ToolName, args: Record<string, unknown>) => {
@@ -89,6 +100,10 @@ export function TicTacToeApp() {
   return (
     <main>
       <ToastStack toasts={toasts} onDismiss={dismiss} />
+      {view.phase !== 'closed' && (
+        <CloseButton inMatch={view.phase === 'game'} onClose={() => call('close_session', {})} />
+      )}
+      {view.phase === 'closed' && <ClosedScreen />}
       {view.phase === 'name' && (
         <JoinScreen onlineCount={view.onlineCount} error={view.error} onSubmit={(name) => call('set_name', { name })} />
       )}
@@ -102,6 +117,8 @@ export function TicTacToeApp() {
           onAccept={(inviteId) => call('accept_invite', { inviteId })}
           onDecline={(inviteId) => call('decline_invite', { inviteId })}
           onCancel={(inviteId) => call('cancel_invite', { inviteId })}
+          canPlayModel={canPlayModel}
+          onPlayModel={() => call('play_vs_model', {})}
         />
       )}
       {view.phase === 'game' && view.game && (
@@ -110,6 +127,7 @@ export function TicTacToeApp() {
           game={view.game}
           onMove={(cell) => call('make_move', { cell })}
           onLeave={() => call('leave', {})}
+          modelTurn={view.game.opponentKind === 'model' ? { stale, onResend: resend } : undefined}
         />
       )}
     </main>

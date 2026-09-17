@@ -21,7 +21,7 @@ mcp-app.html             Vite entry for the widget
 .storybook/              Storybook 10 config (@storybook/react-vite)
 src/app/                 React widget rendered inside the chat (useApp from @modelcontextprotocol/ext-apps/react)
 src/app/ui/              9-slice primitives (Panel, Button, Modal, Toast, ...)
-src/app/screens/         Pages (Join, Lobby, Game)
+src/app/screens/         Pages (Join, Lobby, Game, Closed)
 src/app/styles/          Tokens (palette per theme), base styles, animations
 src/app/assets/          Kenney tiles and the Press Start 2P font
 src/app/**/*.stories.tsx Storybook stories, next to the component/screen they cover

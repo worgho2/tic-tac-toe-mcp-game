@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { Lobby } from './lobby/lobby.js';
 import { createServer, RESOURCE_URI } from './server.js';
 
+const MODEL_TOOLS = ['join_game', 'model_move'];
 const APP_ONLY_TOOLS = [
   'set_name',
   'get_state',
@@ -13,6 +14,8 @@ const APP_ONLY_TOOLS = [
   'cancel_invite',
   'make_move',
   'leave',
+  'close_session',
+  'play_vs_model',
 ];
 const FIXTURE_HTML = '<!DOCTYPE html><html><body>fixture</body></html>';
 
@@ -40,6 +43,14 @@ describe('MCP server contract', () => {
     expect(join?._meta?.ui).not.toHaveProperty('visibility');
   });
 
+  it('exposes model_move to the model without opening a widget', async () => {
+    const { tools } = await client.listTools();
+    const move = tools.find((t) => t.name === 'model_move');
+    expect(move).toBeDefined();
+    expect(move?._meta?.ui).toBeUndefined();
+    expect(move?.description).toMatch(/only call this when the game widget asks/i);
+  });
+
   it('marks every other tool as app-only', async () => {
     const { tools } = await client.listTools();
     for (const name of APP_ONLY_TOOLS) {
@@ -47,7 +58,34 @@ describe('MCP server contract', () => {
       expect(tool, name).toBeDefined();
       expect(tool?._meta?.ui, name).toMatchObject({ visibility: ['app'] });
     }
-    expect(tools).toHaveLength(APP_ONLY_TOOLS.length + 1);
+    for (const name of MODEL_TOOLS) {
+      expect(tools.find((t) => t.name === name)?._meta?.ui ?? {}, name).not.toHaveProperty('visibility');
+    }
+    expect(tools).toHaveLength(APP_ONLY_TOOLS.length + MODEL_TOOLS.length);
+  });
+
+  it('plays a round against the model end to end', async () => {
+    const joined = (await client.callTool({ name: 'join_game', arguments: {} })).structuredContent as {
+      playerId: string;
+    };
+    const playerId = joined.playerId;
+    await client.callTool({ name: 'set_name', arguments: { playerId, name: 'Alice' } });
+    const started = (await client.callTool({ name: 'play_vs_model', arguments: { playerId } })).structuredContent as {
+      phase: string;
+      game: { modelPlayerId: string; opponentName: string; opponentTag: string };
+    };
+    expect(started.phase).toBe('game');
+    expect(started.game).toMatchObject({ opponentName: 'Model', opponentTag: 'AI' });
+    await client.callTool({ name: 'make_move', arguments: { playerId, cell: 4 } });
+    const moved = (
+      await client.callTool({ name: 'model_move', arguments: { playerId: started.game.modelPlayerId, cell: 0 } })
+    ).structuredContent as { error: string | null; game: { board: (string | null)[] } };
+    expect(moved.error).toBeNull();
+    const state = (await client.callTool({ name: 'get_state', arguments: { playerId } })).structuredContent as {
+      game: { board: (string | null)[]; yourTurn: boolean };
+    };
+    expect(state.game.board[0]).toBe('O');
+    expect(state.game.yourTurn).toBe(true);
   });
 
   it('serves the widget as an MCP App HTML resource', async () => {

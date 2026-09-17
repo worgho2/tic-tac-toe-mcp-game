@@ -8,13 +8,18 @@ import {
   type Mark,
 } from '../game/game.js';
 import {
+  CLOSED_TTL_MS,
   type GameView,
   INVITE_TTL_MS,
   type InviteView,
   type LobbyEvent,
+  MAX_CLOSED_IDS,
   MAX_NAME,
+  MODEL_NAME,
+  MODEL_TAG,
   type Phase,
   type PlayerId,
+  type PlayerKind,
   type PlayerView,
   PRESENCE_TTL_MS,
   type PublicPlayer,
@@ -27,6 +32,9 @@ interface PlayerState {
   id: PlayerId;
   name: string | null;
   tag: string | null;
+  kind: PlayerKind;
+  /** For model players: the human that started the match. */
+  ownerId: PlayerId | null;
   matchId: string | null;
   lastSeen: number;
   events: LobbyEvent[];
@@ -67,6 +75,8 @@ export class Lobby {
   private players = new Map<PlayerId, PlayerState>();
   private invites = new Map<string, Invite>();
   private matches = new Map<string, Match>();
+  /** Ids closed by the player, with the close time. `reconnect` refuses them until `CLOSED_TTL_MS` passes. */
+  private closed = new Map<PlayerId, number>();
 
   constructor(
     private genId: () => string = defaultGenId,
@@ -76,7 +86,7 @@ export class Lobby {
 
   connect(): PlayerId {
     const id = this.genId();
-    this.players.set(id, { id, name: null, tag: null, matchId: null, lastSeen: this.clock(), events: [] });
+    this.players.set(id, this.newHuman(id));
     return id;
   }
 
@@ -96,7 +106,8 @@ export class Lobby {
       this.touch(id);
       return false;
     }
-    this.players.set(id, { id, name: null, tag: null, matchId: null, lastSeen: this.clock(), events: [] });
+    if (this.closed.has(id)) return false;
+    this.players.set(id, this.newHuman(id));
     return true;
   }
 
@@ -104,7 +115,7 @@ export class Lobby {
   sweep(): void {
     const now = this.clock();
     for (const p of [...this.players.values()]) {
-      if (p.lastSeen < now - PRESENCE_TTL_MS) this.removePlayer(p.id);
+      if (p.kind === 'human' && p.lastSeen < now - PRESENCE_TTL_MS) this.removePlayer(p.id);
     }
     for (const [invId, inv] of [...this.invites]) {
       if (now - inv.createdAt >= INVITE_TTL_MS) {
@@ -114,6 +125,11 @@ export class Lobby {
     }
     for (const match of this.matches.values()) {
       if (match.endedAt !== null && now - match.endedAt >= REMATCH_DELAY_MS) this.startNextRound(match);
+    }
+    // Insertion order == closedAt order, so the first non-expired entry means every later one is too.
+    for (const [id, closedAt] of this.closed) {
+      if (now - closedAt < CLOSED_TTL_MS) break;
+      this.closed.delete(id);
     }
   }
 
@@ -132,7 +148,7 @@ export class Lobby {
     const from = this.players.get(fromId);
     const target = this.players.get(targetId);
     if (!from?.name) return 'register first';
-    if (!target?.name) return 'player not available';
+    if (!target?.name || target.kind === 'model') return 'player not available';
     if (from.matchId || target.matchId) return 'player is busy';
     for (const inv of this.invites.values()) {
       if (inv.fromId === fromId && inv.toId === targetId) return 'invite already pending';
@@ -170,24 +186,32 @@ export class Lobby {
     if (a.matchId) return `${a.name}#${a.tag} is in another match`;
     if (!b?.name) return 'register first';
     if (b.matchId) return 'you are already in a match';
-    const match: Match = {
-      id: this.genId(),
-      players: [a.id, b.id],
-      marks: { [a.id]: 'X', [b.id]: 'O' },
-      score: { [a.id]: 0, [b.id]: 0 },
-      round: 1,
-      board: createBoard(),
-      turn: 'X',
-      over: false,
-      result: null,
-      endedAt: null,
-    };
-    this.matches.set(match.id, match);
-    a.matchId = match.id;
-    b.matchId = match.id;
-    this.cancelInvitesOf(a.id, b.id);
-    this.cancelInvitesOf(b.id, a.id);
+    this.createMatch(a, b);
     return null;
+  }
+
+  /** Starts a match against a hidden model player owned by `humanId`. The human is X in round 1. */
+  startModelMatch(humanId: PlayerId): string | null {
+    const human = this.players.get(humanId);
+    if (!human?.name) return 'register first';
+    if (human.matchId) return 'you are already in a match';
+    const model: PlayerState = {
+      id: this.genId(),
+      name: MODEL_NAME,
+      tag: MODEL_TAG,
+      kind: 'model',
+      ownerId: humanId,
+      matchId: null,
+      lastSeen: this.clock(),
+      events: [],
+    };
+    this.players.set(model.id, model);
+    this.createMatch(human, model);
+    return null;
+  }
+
+  isModelPlayer(id: PlayerId): boolean {
+    return this.players.get(id)?.kind === 'model';
   }
 
   makeMove(id: PlayerId, cell: number): string | null {
@@ -223,11 +247,26 @@ export class Lobby {
     return null;
   }
 
+  /**
+   * Ends the session for good: any match ends (the opponent gets `opponent-left`), invites are dropped,
+   * the player is removed and the id is remembered so a stale widget replaying it stays closed.
+   */
+  close(id: PlayerId): null {
+    this.removePlayer(id);
+    this.closed.delete(id);
+    if (this.closed.size >= MAX_CLOSED_IDS) {
+      const oldest = this.closed.keys().next().value;
+      if (oldest !== undefined) this.closed.delete(oldest);
+    }
+    this.closed.set(id, this.clock());
+    return null;
+  }
+
   viewFor(id: PlayerId): PlayerView {
     const p = this.players.get(id);
     if (!p) {
       return {
-        phase: 'name',
+        phase: this.closed.has(id) ? 'closed' : 'name',
         you: { id, name: null, tag: null },
         onlineCount: this.onlineCount(),
         players: [],
@@ -254,6 +293,19 @@ export class Lobby {
   }
 
   // ---- internals ----
+
+  private newHuman(id: PlayerId): PlayerState {
+    return {
+      id,
+      name: null,
+      tag: null,
+      kind: 'human',
+      ownerId: null,
+      matchId: null,
+      lastSeen: this.clock(),
+      events: [],
+    };
+  }
 
   private uniqueTag(selfId: PlayerId, name: string): string {
     let tag = this.genTag();
@@ -291,6 +343,27 @@ export class Lobby {
     }
   }
 
+  /** Starts round 1 with `a` as X, then drops every other pending invite of both players. */
+  private createMatch(a: PlayerState, b: PlayerState): void {
+    const match: Match = {
+      id: this.genId(),
+      players: [a.id, b.id],
+      marks: { [a.id]: 'X', [b.id]: 'O' },
+      score: { [a.id]: 0, [b.id]: 0 },
+      round: 1,
+      board: createBoard(),
+      turn: 'X',
+      over: false,
+      result: null,
+      endedAt: null,
+    };
+    this.matches.set(match.id, match);
+    a.matchId = match.id;
+    b.matchId = match.id;
+    this.cancelInvitesOf(a.id, b.id);
+    this.cancelInvitesOf(b.id, a.id);
+  }
+
   private startNextRound(match: Match): void {
     const [a, b] = match.players;
     match.marks = { [a]: match.marks[b], [b]: match.marks[a] };
@@ -317,6 +390,9 @@ export class Lobby {
         opp.events.push({ type: 'opponent-left' });
       }
     }
+    for (const pid of match.players) {
+      if (this.players.get(pid)?.kind === 'model') this.players.delete(pid);
+    }
   }
 
   private removePlayer(id: PlayerId): void {
@@ -331,14 +407,14 @@ export class Lobby {
 
   private onlineCount(): number {
     let n = 0;
-    for (const p of this.players.values()) if (p.name) n += 1;
+    for (const p of this.players.values()) if (p.name && p.kind === 'human') n += 1;
     return n;
   }
 
   private publicPlayers(selfId: PlayerId): PublicPlayer[] {
     const out: PublicPlayer[] = [];
     for (const p of this.players.values()) {
-      if (p.id === selfId || !p.name || !p.tag) continue;
+      if (p.id === selfId || !p.name || !p.tag || p.kind === 'model') continue;
       out.push({ id: p.id, name: p.name, tag: p.tag, status: p.matchId ? 'busy' : 'idle' });
     }
     return out;
@@ -360,6 +436,7 @@ export class Lobby {
   private gameView(match: Match, id: PlayerId): GameView {
     const oppId = match.players.find((x) => x !== id)!;
     const opp = this.handleOf(oppId);
+    const oppKind: PlayerKind = this.players.get(oppId)?.kind ?? 'human';
     return {
       round: match.round,
       board: match.board,
@@ -371,6 +448,8 @@ export class Lobby {
       opponentScore: match.score[oppId],
       over: match.over,
       result: match.result,
+      opponentKind: oppKind,
+      modelPlayerId: oppKind === 'model' ? oppId : null,
     };
   }
 }
