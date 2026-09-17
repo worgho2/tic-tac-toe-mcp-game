@@ -2,6 +2,7 @@ import { useApp } from '@modelcontextprotocol/ext-apps/react';
 import { useCallback, useEffect, useState } from 'react';
 import pkg from '../../package.json';
 import { useHostTheme } from './hooks/useHostTheme';
+import { useModelTurn } from './hooks/useModelTurn';
 import { usePollView } from './hooks/usePollView';
 import { useToasts } from './hooks/useToasts';
 import { eventText } from './lib/events';
@@ -65,6 +66,8 @@ export function TicTacToeApp() {
   }, [app]);
   useHostTheme(app, theme);
   usePollView(app, tornDown || view?.phase === 'closed' ? null : playerId, ingest);
+  const { stale, resend } = useModelTurn(app, view?.game ?? null);
+  const canPlayModel = Boolean(app?.getHostCapabilities()?.message);
 
   const call = useCallback(
     async (name: ToolName, args: Record<string, unknown>) => {
@@ -108,6 +111,8 @@ export function TicTacToeApp() {
           onAccept={(inviteId) => call('accept_invite', { inviteId })}
           onDecline={(inviteId) => call('decline_invite', { inviteId })}
           onCancel={(inviteId) => call('cancel_invite', { inviteId })}
+          canPlayModel={canPlayModel}
+          onPlayModel={() => call('play_vs_model', {})}
         />
       )}
       {view.phase === 'game' && view.game && (
@@ -116,6 +121,7 @@ export function TicTacToeApp() {
           game={view.game}
           onMove={(cell) => call('make_move', { cell })}
           onLeave={() => call('leave', {})}
+          modelTurn={view.game.opponentKind === 'model' ? { stale, onResend: resend } : undefined}
         />
       )}
     </main>
