@@ -333,13 +333,8 @@ h3 {
 
 /* ---- Screens ---- */
 
+.join,
 .closed {
-  max-width: 360px;
-  margin: 44px auto 0;
-  text-align: center;
-}
-
-.join {
   max-width: 360px;
   margin: 44px auto 0;
   text-align: center;

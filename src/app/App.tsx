@@ -37,12 +37,15 @@ export function TicTacToeApp() {
         next = data;
       }
       if (!next) return;
+      // A reply for another player (e.g. a future host routing a model_move result back to this
+      // widget) must never be rendered as if it were ours.
+      if (playerId && next.you.id !== playerId) return;
       setView(next);
       for (const event of next.events) push(eventText(event));
       // The join screen renders its error inline; everywhere else it is a toast.
       if (next.error && next.phase !== 'name' && !redundantError(next)) push(next.error);
     },
-    [push],
+    [push, playerId],
   );
 
   const { app, error } = useApp({

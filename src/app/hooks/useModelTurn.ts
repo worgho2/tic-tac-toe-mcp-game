@@ -34,6 +34,8 @@ export function useModelTurn(
     const gen = ++generation.current;
     setStale(false);
     clearTimer();
+    // No generation check needed here: `send` and the effect cleanup always clear the existing timer
+    // before a new one is armed, so at most one timer is ever pending.
     timer.current = window.setTimeout(() => setStale(true), staleMs);
     try {
       const result = await app.sendMessage({ role: 'user', content: [{ type: 'text', text }] });
@@ -45,6 +47,8 @@ export function useModelTurn(
   }, [app, text, staleMs, clearTimer]);
 
   useEffect(() => {
+    // Becoming inactive (or staying inactive): no clearTimer() call needed here, since the previous
+    // effect run's cleanup already cleared any pending timer before this run started.
     if (text === null) {
       generation.current += 1;
       setStale(false);

@@ -71,6 +71,7 @@ Internal `PlayerState` gains `kind: PlayerKind` and `ownerId: PlayerId | null` (
 - `startModelMatch(humanId)`: errors `register first`, `you are already in a match`. Creates a player `{ name: 'Model', tag: 'AI', kind: 'model', ownerId: humanId }` and a match with the human as X, then runs the same invite auto-cancel as `acceptInvite`. Returns `null`.
 - `publicPlayers` and `onlineCount` skip `kind: 'model'`. `invite` to a model player returns `player not available`.
 - `sweep()`: model players are not subject to `PRESENCE_TTL_MS`. Closed ids older than `CLOSED_TTL_MS` are dropped from `closed`.
+- `closed` is capped at `MAX_CLOSED_IDS = 10_000` entries; the oldest is evicted first when the cap is hit. An evicted id degrades to today's reconnect behaviour: it is no longer remembered as closed, so a stale widget replaying it can create a fresh player again.
 - `endMatch`: after the existing bookkeeping, deletes every `kind: 'model'` player of that match. Covers `leave`, presence sweep of the owner, and `close`.
 - `makeMove` and `gameView` are unchanged apart from the two new `GameView` fields. `handleOf` of a model player yields `Model#AI`.
 - `close(id)`: `leave(id)`, remove the player (if present), set `closed[id] = clock()`. Always returns `null`, also for unknown ids (the widget may have been swept before the click).
@@ -85,7 +86,7 @@ Internal `PlayerState` gains `kind: PlayerKind` and `ownerId: PlayerId | null` (
 | `close_session` | app | `{ playerId }` | `close` |
 | `model_move` | model | `{ playerId, cell }` | `makeMove`, guarded |
 
-`model_move` is registered through the SDK's plain `server.registerTool` with no `_meta.ui` at all (`registerAppTool` requires one), so the call does not open another widget. Description for the model: "Play your move in a tic-tac-toe match against the user. Only call this when the game widget asks you to; use the playerId it gives you. Cells are 0-8, left to right, top to bottom." Handler: `sweep` only (no `reconnect`, which would re-create an unknown id as a human), then if the id is not a `kind: 'model'` player reply with `error: 'not a model player'`, else `makeMove` and reply with the model player's view. The reply gives the model the board, `yourTurn` and any error, so a wrong move is self-correcting.
+`model_move` is registered through the SDK's plain `server.registerTool` with no `_meta.ui` at all (`registerAppTool` requires one), so the call does not open another widget. Description for the model: "Play your move in a tic-tac-toe match against the user. Only call this when the game widget asks you to, and use the playerId from the widget's message, not the one returned by join_game. Cells are 0-8, left to right, top to bottom." Handler: `sweep` only (no `reconnect`, which would re-create an unknown id as a human), then if the id is not a `kind: 'model'` player reply with only `{ error: 'not a model player' }` and never build a view — the id could be a human's (e.g. one reused from the `join_game` reply), and `viewFor` would both leak that human's private view and drain their pending events. Otherwise `makeMove` and reply with the model player's view. The reply gives the model the board, `yourTurn` and any error, so a wrong move is self-correcting.
 
 `join_game`'s description mentions that the user can also play against the assistant.
 
@@ -114,7 +115,7 @@ Screens stay pure. `useModelTurn` joins `usePollView` and `useHostTheme` as the 
 `useModelTurn(app, game)` returns `{ stale, resend }`.
 
 - Active when `game?.opponentKind === 'model' && !game.yourTurn && !game.over`.
-- State key: `` `${game.round}:${game.board.join('')}` ``. When the key changes while active, send `buildModelMessage(game)` via `app.sendMessage({ role: 'user', content: [{ type: 'text', text }] })` once, and start a 10 s timer. Timer fires → `stale = true`. `sendMessage` resolving with `isError` → `stale = true` at once.
+- The effect keys on the built message text, `buildModelMessage(game)`, not a separate key: that text changes whenever round, board, marks, scores or `modelPlayerId` change, so identical boards from successive polls never re-send. When it changes while active, send it via `app.sendMessage({ role: 'user', content: [{ type: 'text', text }] })` once, and start a 10 s timer. Timer fires → `stale = true`. `sendMessage` resolving with `isError` → `stale = true` at once.
 - `resend()` sends the same message and restarts the timer.
 - Any key change or leaving the active state clears the timer and resets `stale`. Timers are cleared on unmount.
 
