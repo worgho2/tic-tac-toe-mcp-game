@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { CLOSED_TTL_MS, INVITE_TTL_MS, Lobby, PRESENCE_TTL_MS, REMATCH_DELAY_MS } from './lobby.js';
+import { CLOSED_TTL_MS, INVITE_TTL_MS, Lobby, MAX_CLOSED_IDS, PRESENCE_TTL_MS, REMATCH_DELAY_MS } from './lobby.js';
 
 // Deterministic ids (id1, id2, …), tags (0001, 0002, …) and a controllable clock.
 function makeCounter(prefix = 'id') {
@@ -622,6 +622,14 @@ describe('Lobby', () => {
       lobby.sweep();
       expect(lobby.viewFor(a).phase).toBe('name');
       expect(lobby.reconnect(a)).toBe(true);
+    });
+
+    it('the closed map is capped; the oldest id is evicted first', () => {
+      for (let i = 0; i <= MAX_CLOSED_IDS; i++) {
+        lobby.close(`c${i}`);
+      }
+      expect(lobby.reconnect('c0')).toBe(true);
+      expect(lobby.reconnect(`c${MAX_CLOSED_IDS}`)).toBe(false);
     });
   });
 });

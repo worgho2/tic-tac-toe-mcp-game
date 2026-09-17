@@ -14,6 +14,8 @@ export const MODEL_TAG = 'AI';
 export type PlayerKind = 'human' | 'model';
 /** A closed player id is remembered this long so a stale widget can never re-create it. */
 export const CLOSED_TTL_MS = 24 * 60 * 60 * 1000;
+/** Upper bound on remembered closed ids; the oldest is evicted first. Protects a public endpoint from unbounded growth. */
+export const MAX_CLOSED_IDS = 10_000;
 
 export type PlayerId = string;
 export type Phase = 'name' | 'lobby' | 'game' | 'closed';

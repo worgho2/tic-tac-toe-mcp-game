@@ -13,6 +13,7 @@ import {
   INVITE_TTL_MS,
   type InviteView,
   type LobbyEvent,
+  MAX_CLOSED_IDS,
   MAX_NAME,
   MODEL_NAME,
   MODEL_TAG,
@@ -125,8 +126,10 @@ export class Lobby {
     for (const match of this.matches.values()) {
       if (match.endedAt !== null && now - match.endedAt >= REMATCH_DELAY_MS) this.startNextRound(match);
     }
-    for (const [id, closedAt] of [...this.closed]) {
-      if (now - closedAt >= CLOSED_TTL_MS) this.closed.delete(id);
+    // Insertion order == closedAt order, so the first non-expired entry means every later one is too.
+    for (const [id, closedAt] of this.closed) {
+      if (now - closedAt < CLOSED_TTL_MS) break;
+      this.closed.delete(id);
     }
   }
 
@@ -250,6 +253,11 @@ export class Lobby {
    */
   close(id: PlayerId): null {
     this.removePlayer(id);
+    this.closed.delete(id);
+    if (this.closed.size >= MAX_CLOSED_IDS) {
+      const oldest = this.closed.keys().next().value;
+      if (oldest !== undefined) this.closed.delete(oldest);
+    }
     this.closed.set(id, this.clock());
     return null;
   }
