@@ -89,6 +89,42 @@ describe('useModelTurn', () => {
     expect(result.current.stale).toBe(true);
   });
 
+  it('a rejected sendMessage marks the turn stale at once', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const sendMessage = vi.fn().mockRejectedValue(new Error('boom'));
+    const app = { sendMessage } as unknown as App;
+    const { result } = renderHook(() => useModelTurn(app, gameVsModelWaiting));
+    await act(async () => {});
+    expect(result.current.stale).toBe(true);
+    consoleError.mockRestore();
+  });
+
+  it('a late rejection from a superseded board does not mark the new board stale', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let reject!: (e: Error) => void;
+    const sendMessage = vi.fn();
+    sendMessage.mockReturnValueOnce(
+      new Promise((_, r) => {
+        reject = r;
+      }),
+    );
+    sendMessage.mockResolvedValue({});
+    const app = { sendMessage } as unknown as App;
+    const { result, rerender } = renderHook(({ game }) => useModelTurn(app, game), {
+      initialProps: { game: gameVsModelWaiting as GameView | null },
+    });
+    await act(async () => {});
+    const next: GameView = { ...gameVsModelWaiting, board: ['O', null, null, null, 'X', null, null, null, 'X'] };
+    rerender({ game: next });
+    await act(async () => {});
+    await act(async () => {
+      reject(new Error('late'));
+    });
+    expect(result.current.stale).toBe(false);
+    expect(sendMessage).toHaveBeenCalledTimes(2);
+    consoleError.mockRestore();
+  });
+
   it('clears its timer on unmount', async () => {
     const { app } = fakeApp();
     const { unmount } = renderHook(() => useModelTurn(app, gameVsModelWaiting));

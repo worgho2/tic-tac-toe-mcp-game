@@ -19,6 +19,7 @@ export function useModelTurn(
 ): { stale: boolean; resend: () => Promise<void> } {
   const [stale, setStale] = useState(false);
   const timer = useRef<number | null>(null);
+  const generation = useRef(0);
   const active = game !== null && game.opponentKind === 'model' && !game.yourTurn && !game.over;
   // A string, so identical boards from successive polls do not re-trigger the effect.
   const text = active ? buildModelMessage(game) : null;
@@ -30,20 +31,22 @@ export function useModelTurn(
 
   const send = useCallback(async () => {
     if (!app || text === null) return;
+    const gen = ++generation.current;
     setStale(false);
     clearTimer();
     timer.current = window.setTimeout(() => setStale(true), staleMs);
     try {
       const result = await app.sendMessage({ role: 'user', content: [{ type: 'text', text }] });
-      if (result.isError) setStale(true);
+      if (result.isError && gen === generation.current) setStale(true);
     } catch (err) {
       console.error(err);
-      setStale(true);
+      if (gen === generation.current) setStale(true);
     }
   }, [app, text, staleMs, clearTimer]);
 
   useEffect(() => {
     if (text === null) {
+      generation.current += 1;
       setStale(false);
       return;
     }
