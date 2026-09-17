@@ -49,8 +49,9 @@ export interface CreateServerOptions {
 const playerIdSchema = z.string().regex(/^[a-z0-9]{1,32}$/);
 
 /**
- * Creates an MCP server exposing one model-facing tool (`join_game`, which opens the widget) and a set
- * of app-only tools the widget uses to drive the lobby and the game.
+ * Creates an MCP server exposing two model-facing tools (`join_game`, which opens the widget, and
+ * `model_move`, the assistant's move in a match against the user) and a set of app-only tools the
+ * widget uses to drive the lobby and the game.
  */
 export function createServer(options: CreateServerOptions = {}): McpServer {
   const lobby = options.lobby ?? sharedLobby;
@@ -78,7 +79,7 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
     {
       title: 'Model Move',
       description:
-        'Play your move in a tic-tac-toe match against the user. Only call this when the game widget asks you to; use the playerId it gives you. Cells are 0-8, left to right, top to bottom.',
+        "Play your move in a tic-tac-toe match against the user. Only call this when the game widget asks you to, and use the playerId from the widget's message, not the one returned by join_game. Cells are 0-8, left to right, top to bottom.",
       inputSchema: z.object({ playerId: playerIdSchema, cell: z.number().int().min(0).max(8) }),
     },
     async (args) => handleModelMove(lobby, args),

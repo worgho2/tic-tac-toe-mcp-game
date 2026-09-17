@@ -5,6 +5,7 @@ import {
   handleAcceptInvite,
   handleCancelInvite,
   handleCloseSession,
+  handleDeclineInvite,
   handleGetState,
   handleInvite,
   handleJoin,
@@ -164,12 +165,21 @@ describe('tool handlers', () => {
   it('handleModelMove refuses a human id and does not create a player for an unknown id', () => {
     const a = joinAs('Alice');
     handlePlayVsModel(lobby, { playerId: a });
-    const human = handleModelMove(lobby, { playerId: a, cell: 0 }).structuredContent as unknown as PlayerView;
-    expect(human.error).toBe('not a model player');
-    const ghost = handleModelMove(lobby, { playerId: 'ghost', cell: 0 }).structuredContent as unknown as PlayerView;
-    expect(ghost.error).toBe('not a model player');
-    expect(ghost.phase).toBe('name');
+    const human = handleModelMove(lobby, { playerId: a, cell: 0 }).structuredContent;
+    expect(human).toEqual({ error: 'not a model player' });
+    const ghost = handleModelMove(lobby, { playerId: 'ghost', cell: 0 }).structuredContent;
+    expect(ghost).toEqual({ error: 'not a model player' });
     expect(lobby.isModelPlayer('ghost')).toBe(false);
     expect(stateOf(a).onlineCount).toBe(1);
+  });
+
+  it("handleModelMove does not drain the target player's pending events when it refuses their id", () => {
+    const a = joinAs('Alice');
+    const b = joinAs('Bob');
+    handleInvite(lobby, { playerId: b, targetId: a });
+    handleDeclineInvite(lobby, { playerId: a, inviteId: stateOf(a).invites.received[0].inviteId });
+    const reply = handleModelMove(lobby, { playerId: b, cell: 0 }).structuredContent;
+    expect(reply).toEqual({ error: 'not a model player' });
+    expect(stateOf(b).events).toEqual([{ type: 'invite-declined', name: 'Alice', tag: expect.any(String) }]);
   });
 });
