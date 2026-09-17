@@ -13,17 +13,21 @@ interface Props {
   game: GameView;
   onMove: (cell: number) => void;
   onLeave: () => void;
+  /** Present in matches against the model: staleness of the last request and how to repeat it. */
+  modelTurn?: { stale: boolean; onResend: () => void };
 }
 
-function turnLine(game: GameView): string {
+function turnLine(game: GameView, waitingForModel: boolean): string {
   if (game.over) return 'Next round starts in a moment…';
-  return game.yourTurn ? 'Your turn' : "Opponent's turn";
+  if (game.yourTurn) return 'Your turn';
+  return waitingForModel ? 'Waiting for the model…' : "Opponent's turn";
 }
 
-export function GameScreen({ you, game, onMove, onLeave }: Props) {
+export function GameScreen({ you, game, onMove, onLeave, modelTurn }: Props) {
   const [confirmLeave, setConfirmLeave] = useState(false);
   const outcome = roundOutcome(game);
   const yourHandle = you.name && you.tag ? handle(you.name, you.tag) : '';
+  const modelPending = modelTurn !== undefined && !game.yourTurn && !game.over;
 
   const leave = () => {
     setConfirmLeave(false);
@@ -44,8 +48,13 @@ export function GameScreen({ you, game, onMove, onLeave }: Props) {
         </output>
       </header>
       <p className="muted game__status">
-        Round {game.round} · you are {game.yourMark} · {turnLine(game)}
+        Round {game.round} · you are {game.yourMark} · {turnLine(game, modelPending)}
       </p>
+      {modelPending && modelTurn.stale && (
+        <Button variant="secondary" className="game__resend" onClick={modelTurn.onResend}>
+          Ask again
+        </Button>
+      )}
       <div className="board-wrap">
         <div className="board">
           {game.board.map((mark, index) => (

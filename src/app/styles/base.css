@@ -376,6 +376,10 @@ h3 {
   margin: 8px 0;
 }
 
+.lobby__model {
+  margin-bottom: 8px;
+}
+
 .game {
   text-align: center;
   margin-top: 8px;
@@ -402,6 +406,10 @@ h3 {
 
 .game__status {
   margin: 8px 0 12px;
+}
+
+.game__resend {
+  margin-bottom: 12px;
 }
 
 .board-wrap {

@@ -23,12 +23,15 @@ const meta = {
     onAccept: fn(),
     onDecline: fn(),
     onCancel: fn(),
+    canPlayModel: false,
+    onPlayModel: fn(),
   },
 } satisfies Meta<typeof LobbyScreen>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const WithInvites: Story = {};
+export const WithModelButton: Story = { args: { canPlayModel: true } };
 export const Empty: Story = { args: { players: [], invites: emptyInvites, onlineCount: 1 } };
 export const ManyPlayers: Story = { args: { players: manyPlayers, invites: emptyInvites, onlineCount: 15 } };
 export const ConfirmModalOpen: Story = {

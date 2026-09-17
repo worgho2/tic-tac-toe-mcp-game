@@ -1,6 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
-import { gameDraw, gameLost, gameOpponentTurn, gameWon, gameYourTurn, you } from '../fixtures/views';
+import {
+  gameDraw,
+  gameLost,
+  gameOpponentTurn,
+  gameVsModelWaiting,
+  gameWon,
+  gameYourTurn,
+  you,
+} from '../fixtures/views';
 import { GameScreen } from './GameScreen';
 
 const meta = {
@@ -23,3 +31,7 @@ export const MidRematch: Story = {
   },
 };
 export const Dark: Story = { args: { game: gameWon }, globals: { theme: 'dark' } };
+export const VsModelWaiting: Story = {
+  args: { game: gameVsModelWaiting, modelTurn: { stale: false, onResend: fn() } },
+};
+export const VsModelStale: Story = { args: { game: gameVsModelWaiting, modelTurn: { stale: true, onResend: fn() } } };
