@@ -1,5 +1,5 @@
 import { useApp } from '@modelcontextprotocol/ext-apps/react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import pkg from '../../package.json';
 import { useHostTheme } from './hooks/useHostTheme';
 import { useModelTurn } from './hooks/useModelTurn';
@@ -21,6 +21,7 @@ export function redundantError(view: PlayerView): boolean {
 
 export function TicTacToeApp() {
   const [playerId, setPlayerId] = useState<string | null>(null);
+  const playerIdRef = useRef<string | null>(null);
   const [view, setView] = useState<PlayerView | null>(null);
   const [theme, setTheme] = useState<string | undefined>(undefined);
   const [tornDown, setTornDown] = useState(false);
@@ -32,20 +33,22 @@ export function TicTacToeApp() {
       let next: PlayerView | null = null;
       if (isJoinResult(data)) {
         setPlayerId(data.playerId);
+        playerIdRef.current = data.playerId;
         next = data.view;
       } else if (isPlayerView(data)) {
         next = data;
       }
       if (!next) return;
       // A reply for another player (e.g. a future host routing a model_move result back to this
-      // widget) must never be rendered as if it were ours.
-      if (playerId && next.you.id !== playerId) return;
+      // widget) must never be rendered as if it were ours. A ref is used (not the playerId state)
+      // because onAppCreated captures the first ingest closure, in which playerId is always null.
+      if (playerIdRef.current && next.you.id !== playerIdRef.current) return;
       setView(next);
       for (const event of next.events) push(eventText(event));
       // The join screen renders its error inline; everywhere else it is a toast.
       if (next.error && next.phase !== 'name' && !redundantError(next)) push(next.error);
     },
-    [push, playerId],
+    [push],
   );
 
   const { app, error } = useApp({
