@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/worgho2/tic-tac-toe-mcp-game/compare/v0.2.2...v0.3.0) (2026-09-17)
+
+
+### Features
+
+* play against the assistant and close the session ([#12](https://github.com/worgho2/tic-tac-toe-mcp-game/issues/12)) ([66594bb](https://github.com/worgho2/tic-tac-toe-mcp-game/commit/66594bb8d965e9d35e4a395403ad2e796fe29fcd))
+
 ## [0.2.2](https://github.com/worgho2/tic-tac-toe-mcp-game/compare/v0.2.1...v0.2.2) (2026-09-15)
 
 
