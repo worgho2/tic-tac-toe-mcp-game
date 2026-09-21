@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/worgho2/tic-tac-toe-mcp-game/compare/v0.3.0...v0.4.0) (2026-09-21)
+
+
+### Features
+
+* **app:** rebuild the widget on Kenney UI Pack Adventure with a shared screen frame ([#14](https://github.com/worgho2/tic-tac-toe-mcp-game/issues/14)) ([344a629](https://github.com/worgho2/tic-tac-toe-mcp-game/commit/344a629db22a148dd2c356c6606854af6f507733))
+
 ## [0.3.0](https://github.com/worgho2/tic-tac-toe-mcp-game/compare/v0.2.2...v0.3.0) (2026-09-17)
 
 
