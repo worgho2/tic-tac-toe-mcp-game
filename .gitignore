@@ -18,3 +18,6 @@ storybook-static/
 .DS_Store
 .idea/
 .vscode/
+
+# Local copy of the Kenney asset pack; only the tiles in use are copied into src/app/assets
+ui-pack/

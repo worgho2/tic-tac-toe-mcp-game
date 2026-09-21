@@ -20,7 +20,7 @@ This also installs the git hooks via [Lefthook](https://lefthook.dev/).
 mcp-app.html             Vite entry for the widget
 .storybook/              Storybook 10 config (@storybook/react-vite)
 src/app/                 React widget rendered inside the chat (useApp from @modelcontextprotocol/ext-apps/react)
-src/app/ui/              9-slice primitives (Panel, Button, Modal, Toast, ...)
+src/app/ui/              9-slice primitives (Box, Window, Banner, Button, Modal, ...)
 src/app/screens/         Pages (Join, Lobby, Game, Closed)
 src/app/styles/          Tokens (palette per theme), base styles, animations
 src/app/assets/          Kenney tiles and the Press Start 2P font
@@ -34,7 +34,7 @@ src/server/tools/        Pure tool handlers returning PlayerView snapshots
 
 ## Assets and credits
 
-- UI tiles: [Kenney "UI Pack - Pixel Adventure"](https://kenney.nl/assets/ui-pack-pixel-adventure) (CC0). Only the tiles the widget uses are committed under `src/app/assets/kenney/` with Kenney's `License.txt`. To add one, copy it from `Tiles/Large tiles/Thick outline/` of the pack, add a `--tile-<role>` custom property in `src/app/styles/tokens.css` (both themes), and use it as `border-image-source`.
+- UI tiles: [Kenney "UI Pack - Adventure"](https://kenney.nl/assets/ui-pack-adventure) (CC0), "Double" PNGs drawn at half size, committed under `src/app/assets/kenney-adventure/` with its `License.txt`. `panel_red_dark.png` is a recolour of `panel_brown_dark.png`, and the `banner_*` files are the pack's banners cut into left cap, middle and right cap. Keep the whole pack in the git-ignored `ui-pack/` and copy only what you use; to add a surface, add a `--tile-<role>` custom property in `src/app/styles/tokens.css` (both themes), use it as `border-image-source`, and add its fill to `contrast.test.ts` if text sits on it.
 - Font: [Press Start 2P](https://fonts.google.com/specimen/Press+Start+2P) (SIL OFL 1.1), `src/app/assets/fonts/`.
 
 All assets are inlined into `dist/mcp-app.html`; the widget must not reference external URLs (MCP hosts sandbox it with a CSP).
@@ -45,7 +45,18 @@ All assets are inlined into `dist/mcp-app.html`; the widget must not reference e
 
 ## Storybook
 
-`pnpm storybook` serves every primitive and screen state at http://localhost:6006 (light/dark toolbar, 320px "Small mobile" viewport on the narrow stories, a11y panel from `@storybook/addon-a11y`). `pnpm build-storybook` writes `storybook-static/`, which CI builds on every pull request. Stories live next to their components as `*.stories.tsx` and reuse `src/app/fixtures/views.ts`; add a story whenever you add a state a reviewer should be able to see without an MCP host.
+`pnpm storybook` serves every primitive and screen state at http://localhost:6006 (light/dark toolbar, 320px "Small mobile" viewport on the narrow stories, a11y panel from `@storybook/addon-a11y`). `pnpm build-storybook` writes `storybook-static/`, which CI builds on every pull request. Stories live next to their components as `*.stories.tsx` and reuse `src/app/fixtures/views.ts`; add a story whenever you add a state a reviewer should be able to see without an MCP host. The narrow stories wrap the screen in a fixed 360px box (the screens size themselves with container queries, so the viewport setting alone does not narrow them), and `LongNames` stories use 24-character names, the server's maximum.
+
+The README screenshots in `docs/media/` are the `Screens/Join/Empty`, `Screens/Lobby/WithModelButton` and `Screens/Game/Win` stories in the light theme, captured at 2x with headless Chrome from the static build and cropped to the widget:
+
+```bash
+pnpm build-storybook && (cd storybook-static && python3 -m http.server 6099 &)
+google-chrome --headless=new --hide-scrollbars --force-device-scale-factor=2 --window-size=760,760 \
+  --virtual-time-budget=5000 --screenshot=lobby.png \
+  "http://127.0.0.1:6099/iframe.html?id=screens-lobby--with-model-button&viewMode=story&globals=theme:light"
+```
+
+Crop each capture to the non-white bounding box plus 16px (e.g. with Pillow's `ImageChops.difference(...).getbbox()`).
 
 ## Scripts
 
@@ -77,8 +88,8 @@ The type drives the changelog and the version bump (`feat` → minor, `fix` → 
 
 ## CI and releases
 
-- `ci.yml` runs on every pull request: lint, typecheck, tests, build and a no-push Docker build.
-- `release.yml` runs on every push to `main`. [release-please](https://github.com/googleapis/release-please) keeps a release PR up to date with the pending changelog. Merging that PR creates a GitHub release and tag, and publishes a multi-arch Docker image (`linux/amd64`, `linux/arm64`) to `ghcr.io/worgho2/tic-tac-toe-mcp-game` tagged `X.Y.Z` and `latest`. The repository uses immutable releases: every release gets a fresh `vX.Y.Z` git tag that is never moved, and no floating `vX` / `vX.Y` tags are created.
+- `ci.yml` runs on every pull request: lint, typecheck, tests, build, a Storybook build and a no-push Docker build.
+- `release.yml` runs on every push to `main`. [release-please](https://github.com/googleapis/release-please) keeps a release PR up to date with the pending changelog. Merging that PR creates a GitHub release and tag, and publishes a multi-arch Docker image (`linux/amd64`, `linux/arm64`) to `ghcr.io/worgho2/tic-tac-toe-mcp-game` tagged `X.Y.Z` and `latest`. The image is built with `--build-arg APP_VERSION=X.Y.Z`: the widget footer and the MCP `serverInfo.version` both show it, and it stays in the container env as `APP_VERSION`. Local and CI builds leave it empty and fall back to `package.json`. The repository uses immutable releases: every release gets a fresh `vX.Y.Z` git tag that is never moved, and no floating `vX` / `vX.Y` tags are created.
 
 ### Repository secrets
 

@@ -1,12 +1,17 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { Badge } from './Badge';
+import { Banner } from './Banner';
+import { Box } from './Box';
 import { Button } from './Button';
 import { Cell } from './Cell';
+import { Handle } from './Handle';
 import { Modal } from './Modal';
 import { Overlay } from './Overlay';
+import { Scoreboard } from './Scoreboard';
+import { StatusDot } from './StatusDot';
 import { ToastStack } from './Toast';
+import { Window } from './Window';
 
 describe('Button', () => {
   it('defaults to type=button and the primary variant', () => {
@@ -22,10 +27,12 @@ describe('Button', () => {
   });
 });
 
-describe('Badge', () => {
-  it('shows the status text and class', () => {
-    render(<Badge status="busy" />);
-    expect(screen.getByText('busy')).toHaveClass('badge', 'badge--busy');
+describe('StatusDot', () => {
+  it('draws the dot for the status and keeps the word for screen readers', () => {
+    const { container } = render(<StatusDot status="busy" />);
+    expect(screen.getByText('busy')).toHaveClass('sr-only');
+    expect(container.querySelector('.dot')).toHaveClass('dot--busy');
+    expect(container.querySelector('.dot')).toHaveAttribute('aria-hidden', 'true');
   });
 });
 
@@ -92,7 +99,7 @@ describe('ToastStack', () => {
 });
 
 describe('Overlay', () => {
-  it('renders confetti for a win, a duck for a loss and a plain ribbon for a draw', () => {
+  it('renders confetti for a win, a duck for a loss and a plain banner for a draw', () => {
     const { rerender, container } = render(<Overlay outcome="win" />);
     expect(screen.getByTestId('overlay')).toHaveAttribute('data-outcome', 'win');
     expect(screen.getByText('You win!')).toBeInTheDocument();
@@ -106,5 +113,87 @@ describe('Overlay', () => {
     rerender(<Overlay outcome="draw" />);
     expect(screen.getByText('Draw')).toBeInTheDocument();
     expect(screen.queryByText('🦆')).not.toBeInTheDocument();
+  });
+});
+
+describe('Banner', () => {
+  it('renders its text inside the banner', () => {
+    render(<Banner className="extra">Players</Banner>);
+    expect(screen.getByText('Players')).toHaveClass('banner__text');
+    expect(screen.getByText('Players').parentElement).toHaveClass('banner', 'extra');
+  });
+});
+
+describe('Box', () => {
+  it('is an inset with an h3 title bar by default', () => {
+    render(<Box title="About">text</Box>);
+    const region = screen.getByRole('region', { name: 'About' });
+    expect(region).toHaveClass('box', 'box--inset');
+    expect(screen.getByRole('heading', { level: 3, name: 'About' }).parentElement).toHaveClass('box__bar');
+  });
+
+  it('renders no title bar without a title', () => {
+    const { container } = render(<Box>text</Box>);
+    expect(container.querySelector('.box__bar')).toBeNull();
+    expect(container.firstElementChild).not.toHaveAttribute('aria-labelledby');
+  });
+});
+
+describe('Scoreboard', () => {
+  const you = { name: 'me', tag: '0001', mark: 'X' as const, score: 2 };
+  const opponent = { name: 'bob', tag: '0042', mark: 'O' as const, score: 1 };
+
+  it('shows both plates with handle, mark and score, and frames the player to move', () => {
+    render(<Scoreboard you={you} opponent={opponent} turn="opponent" />);
+    expect(screen.getByLabelText('Your score')).toHaveTextContent('2');
+    expect(screen.getByLabelText('Opponent score')).toHaveTextContent('1');
+    expect(screen.getByRole('region', { name: 'me#0001' })).not.toHaveClass('plate--active');
+    expect(screen.getByRole('region', { name: 'bob#0042' })).toHaveClass('plate--active');
+    expect(screen.getByText('Turn')).toBeInTheDocument();
+  });
+
+  it('frames nobody between rounds', () => {
+    const { container } = render(<Scoreboard you={you} opponent={opponent} turn={null} />);
+    expect(container.querySelector('.plate--active')).toBeNull();
+    expect(screen.queryByText('Turn')).not.toBeInTheDocument();
+  });
+});
+
+describe('Handle', () => {
+  it('splits the name from the lighter #tag', () => {
+    const { container } = render(<Handle name="bob" tag="0042" />);
+    expect(container.firstElementChild).toHaveTextContent('bob#0042');
+    expect(screen.getByText('bob')).toHaveClass('handle__name');
+    expect(screen.getByText('#0042')).toHaveClass('handle__tag');
+  });
+});
+
+describe('Window', () => {
+  it('renders every slot and names the region after the title', () => {
+    render(
+      <Window title="Players" header={<p>header</p>} footer={<p>footer</p>}>
+        <p>content</p>
+      </Window>,
+    );
+    const region = screen.getByRole('region', { name: 'Players' });
+    expect(region).toHaveClass('box', 'box--window', 'window', 'window--titled');
+    expect(screen.getByRole('heading', { level: 2, name: 'Players' })).toHaveClass('window__title');
+    expect(region.querySelector('.banner')).toHaveClass('window__banner');
+    expect(screen.getByText('header').parentElement).toHaveClass('window__header-main');
+    expect(screen.getByText('content').parentElement).toHaveClass('window__content');
+    expect(screen.getByText('footer').parentElement).toHaveClass('window__footer');
+  });
+
+  it('renders no banner, header or footer when they are not passed', () => {
+    const { container } = render(
+      <Window className="extra">
+        <p>content</p>
+      </Window>,
+    );
+    const root = container.firstElementChild;
+    expect(root).toHaveClass('window', 'extra');
+    expect(root).not.toHaveClass('window--titled');
+    expect(root?.querySelector('.banner, .window__header, .window__footer')).toBeNull();
+    expect(root).not.toHaveAttribute('aria-labelledby');
   });
 });

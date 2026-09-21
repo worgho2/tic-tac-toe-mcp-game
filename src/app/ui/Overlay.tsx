@@ -1,5 +1,5 @@
 import type { Outcome } from '../lib/outcome';
-import { Ribbon } from './Ribbon';
+import { Banner } from './Banner';
 
 const CONFETTI_COUNT = 40;
 const COLORS = ['#e5534b', '#f2c14e', '#4fa3e0', '#7bc96f', '#fff6e0'];
@@ -13,7 +13,7 @@ const pieces = Array.from({ length: CONFETTI_COUNT }, (_, i) => ({
   color: COLORS[i % COLORS.length],
 }));
 
-/** Round-end feedback: confetti on a win, a bobbing duck on a loss, a plain ribbon on a draw. */
+/** Round-end feedback: confetti on a win, a bobbing duck on a loss, a plain banner on a draw. */
 export function Overlay({ outcome }: { outcome: Outcome }) {
   return (
     <div className={`overlay overlay--${outcome}`} data-testid="overlay" data-outcome={outcome} aria-live="assertive">
@@ -33,7 +33,7 @@ export function Overlay({ outcome }: { outcome: Outcome }) {
           🦆
         </div>
       )}
-      <Ribbon>{LABEL[outcome]}</Ribbon>
+      <Banner>{LABEL[outcome]}</Banner>
     </div>
   );
 }

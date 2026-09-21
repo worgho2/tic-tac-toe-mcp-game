@@ -11,10 +11,6 @@
   animation: overlay-in 300ms ease-out;
 }
 
-.overlay .ribbon {
-  margin: 0;
-}
-
 .confetti {
   position: absolute;
   inset: 0;

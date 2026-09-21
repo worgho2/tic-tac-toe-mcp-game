@@ -1,5 +1,6 @@
 import { type KeyboardEvent, type MouseEvent, type ReactNode, useEffect, useId, useRef } from 'react';
 import { Button } from './Button';
+import { Window } from './Window';
 
 interface Props {
   title: string;
@@ -29,7 +30,7 @@ export function Modal({
   onCancel,
 }: Props) {
   const titleId = useId();
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
 
@@ -63,7 +64,7 @@ export function Modal({
     return () => document.removeEventListener('keydown', onDocumentKeyDown);
   }, [onCancel]);
 
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+  const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key !== 'Tab' || !dialogRef.current) return;
     const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE));
     if (focusable.length === 0) return;
@@ -79,7 +80,7 @@ export function Modal({
     }
   };
 
-  const onDialogMouseDown = (event: MouseEvent<HTMLDivElement>) => {
+  const onDialogMouseDown = (event: MouseEvent<HTMLElement>) => {
     const target = event.target as HTMLElement;
     if (!target.closest('button, input, [href], select, textarea')) {
       event.preventDefault();
@@ -94,29 +95,33 @@ export function Modal({
         if (event.target === event.currentTarget) event.preventDefault();
       }}
     >
-      <div
+      <Window
         ref={dialogRef}
-        className="panel modal"
+        className="modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
         onKeyDown={onKeyDown}
         onMouseDown={onDialogMouseDown}
+        header={
+          <h2 id={titleId} className="modal__title">
+            {title}
+          </h2>
+        }
+        actions={
+          <>
+            <Button ref={cancelRef} variant="secondary" onClick={onCancel}>
+              {cancelLabel}
+            </Button>
+            <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm}>
+              {confirmLabel}
+            </Button>
+          </>
+        }
       >
-        <h2 id={titleId} className="modal__title">
-          {title}
-        </h2>
         {children}
-        <div className="modal__actions">
-          <Button ref={cancelRef} variant="secondary" onClick={onCancel}>
-            {cancelLabel}
-          </Button>
-          <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm}>
-            {confirmLabel}
-          </Button>
-        </div>
-      </div>
+      </Window>
     </div>
   );
 }

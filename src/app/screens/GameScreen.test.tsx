@@ -8,13 +8,16 @@ import {
   gameVsModelWaiting,
   gameWon,
   gameYourTurn,
+  meta,
   you,
 } from '../fixtures/views';
 import type { GameView } from '../lib/tools';
 import { GameScreen } from './GameScreen';
 
 function renderGame(game: GameView, onMove = vi.fn(), onLeave = vi.fn()) {
-  const utils = render(<GameScreen you={you} game={game} onMove={onMove} onLeave={onLeave} />);
+  const utils = render(
+    <GameScreen meta={meta} onClose={vi.fn()} you={you} game={game} onMove={onMove} onLeave={onLeave} />,
+  );
   return { ...utils, onMove, onLeave };
 }
 
@@ -23,9 +26,11 @@ describe('GameScreen', () => {
     renderGame({ ...gameWon, over: false, result: null, yourTurn: true });
     expect(screen.getByLabelText('Your score')).toHaveTextContent('1');
     expect(screen.getByLabelText('Opponent score')).toHaveTextContent('0');
-    expect(screen.getByText(/worgho2#1234/)).toBeInTheDocument();
-    expect(screen.getByText(/bob#0042/)).toBeInTheDocument();
-    expect(screen.getByText('Round 1 · you are X · Your turn')).toBeInTheDocument();
+    // Plates are regions named after the handles; the player to move gets the framed plate.
+    expect(screen.getByRole('region', { name: 'worgho2#1234' })).toHaveClass('plate--active');
+    expect(screen.getByRole('region', { name: 'bob#0042' })).not.toHaveClass('plate--active');
+    expect(screen.getByRole('heading', { name: 'Round 1' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Your turn' })).toBeInTheDocument();
   });
 
   it('only empty cells are playable on your turn, and a click reports the index', async () => {
@@ -38,9 +43,10 @@ describe('GameScreen', () => {
 
   it("disables every cell on the opponent's turn and after the round ends", () => {
     const { rerender } = renderGame(gameOpponentTurn);
-    expect(screen.getByText("Round 1 · you are O · Opponent's turn")).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'bob#0042' })).toHaveClass('plate--active');
+    expect(screen.getByRole('heading', { name: "Opponent's turn" })).toBeInTheDocument();
     for (const cell of screen.getAllByRole('button', { name: /^Cell/ })) expect(cell).toBeDisabled();
-    rerender(<GameScreen you={you} game={gameWon} onMove={vi.fn()} onLeave={vi.fn()} />);
+    rerender(<GameScreen meta={meta} onClose={vi.fn()} you={you} game={gameWon} onMove={vi.fn()} onLeave={vi.fn()} />);
     for (const cell of screen.getAllByRole('button', { name: /^Cell/ })) expect(cell).toBeDisabled();
     expect(screen.getByText(/Next round starts in a moment/)).toBeInTheDocument();
   });
@@ -49,12 +55,14 @@ describe('GameScreen', () => {
     const { rerender } = renderGame(gameWon);
     expect(screen.getByTestId('overlay')).toHaveAttribute('data-outcome', 'win');
     expect(screen.getByText('You win!')).toBeInTheDocument();
-    rerender(<GameScreen you={you} game={gameLost} onMove={vi.fn()} onLeave={vi.fn()} />);
+    rerender(<GameScreen meta={meta} onClose={vi.fn()} you={you} game={gameLost} onMove={vi.fn()} onLeave={vi.fn()} />);
     expect(screen.getByTestId('overlay')).toHaveAttribute('data-outcome', 'loss');
     expect(screen.getByText('🦆')).toBeInTheDocument();
-    rerender(<GameScreen you={you} game={gameDraw} onMove={vi.fn()} onLeave={vi.fn()} />);
+    rerender(<GameScreen meta={meta} onClose={vi.fn()} you={you} game={gameDraw} onMove={vi.fn()} onLeave={vi.fn()} />);
     expect(screen.getByText('Draw')).toBeInTheDocument();
-    rerender(<GameScreen you={you} game={gameYourTurn} onMove={vi.fn()} onLeave={vi.fn()} />);
+    rerender(
+      <GameScreen meta={meta} onClose={vi.fn()} you={you} game={gameYourTurn} onMove={vi.fn()} onLeave={vi.fn()} />,
+    );
     expect(screen.queryByTestId('overlay')).not.toBeInTheDocument();
   });
 
@@ -77,6 +85,8 @@ describe('GameScreen', () => {
     const onResend = vi.fn();
     const { rerender } = render(
       <GameScreen
+        meta={meta}
+        onClose={vi.fn()}
         you={you}
         game={gameVsModelWaiting}
         onMove={vi.fn()}
@@ -84,11 +94,13 @@ describe('GameScreen', () => {
         modelTurn={{ stale: false, onResend }}
       />,
     );
-    expect(screen.getByText('Round 1 · you are X · Waiting for the model…')).toBeInTheDocument();
-    expect(screen.getByText(/Model#AI/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Waiting for the model…' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Model#AI' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Ask again' })).not.toBeInTheDocument();
     rerender(
       <GameScreen
+        meta={meta}
+        onClose={vi.fn()}
         you={you}
         game={gameVsModelWaiting}
         onMove={vi.fn()}
@@ -104,6 +116,8 @@ describe('GameScreen', () => {
     const modelTurn = { stale: true, onResend: vi.fn() };
     const { rerender } = render(
       <GameScreen
+        meta={meta}
+        onClose={vi.fn()}
         you={you}
         game={{ ...gameVsModelWaiting, yourTurn: true }}
         onMove={vi.fn()}
@@ -114,6 +128,8 @@ describe('GameScreen', () => {
     expect(screen.queryByRole('button', { name: 'Ask again' })).not.toBeInTheDocument();
     rerender(
       <GameScreen
+        meta={meta}
+        onClose={vi.fn()}
         you={you}
         game={{ ...gameVsModelWaiting, over: true, yourTurn: false }}
         onMove={vi.fn()}
