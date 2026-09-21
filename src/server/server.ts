@@ -57,7 +57,8 @@ export function createServer(options: CreateServerOptions = {}): McpServer {
   const lobby = options.lobby ?? sharedLobby;
   const readHtml = options.readHtml ?? (() => fs.readFile(APP_HTML_PATH, 'utf-8'));
 
-  const server = new McpServer({ name: pkg.name, version: pkg.version });
+  // APP_VERSION is set in the release image (Dockerfile); it matches what the widget bundle was built with.
+  const server = new McpServer({ name: pkg.name, version: process.env.APP_VERSION || pkg.version });
 
   // Model-facing entry point. `_meta.ui.resourceUri` tells the host which resource to render.
   registerAppTool(

@@ -2,15 +2,19 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-// Fill colour at pixel (16,16) of each Kenney tile used as a text background (sampled once with Pillow:
-// Image.open(tile).getpixel((16, 16))). Update this table if a tile role changes in tokens.css.
+// Fill colour at the centre of each Kenney "UI Pack - Adventure" tile used as a text background (sampled once with
+// Pillow: Image.open(tile).getpixel((w // 2, h // 2))). Update this table if a tile role changes in tokens.css.
 const FILLS = {
-  panelLight: '#fff1d2', // tile_0000, also cards (0013)
-  panelDark: '#647685', // tile_0003, also dark cards (0016) and the transparent dark secondary button (0008)
-  greyBlue: '#94afc6', // tile_0002 (inputs, toasts, light secondary / dark primary buttons), badges (0033/0034), danger (0069)
-  brown: '#a3703a', // tile_0001 (light primary button)
-  ribbon: '#e2665b', // tile_0044
+  panelLight: '#fff1d2', // light window (panel_brown_corners_a), inset and cells (panel_brown)
+  panelDark: '#647685', // dark window (panel_grey_bolts_dark), inset and cells (panel_grey_dark)
+  greyBlue: '#94afc6', // secondary button and toast (panel_grey), input (panel_grey_blue)
+  brown: '#a3703a', // primary button (panel_brown_dark)
+  red: '#cf5e53', // danger button (panel_red_dark, recoloured panel_brown_dark)
+  banner: '#e2665b', // classic banner (banner_middle)
 };
+// Box title bars: pattern_diagonal_transparent_small (20% black stripes) at opacity 0.5 (base.css), so the darkest
+// point behind the title is the panel fill darkened by 10%.
+const TITLE_BAR_DARKEN = 0.1;
 const DARK_ERROR_BACKDROP_ALPHA = 0.45; // rgba(0,0,0,0.45) behind dark-theme error text (base.css)
 
 function tokens(css: string, block: 'light' | 'dark'): Record<string, string> {
@@ -43,10 +47,12 @@ const light = tokens(css, 'light');
 const dark = { ...light, ...tokens(css, 'dark') };
 
 // WCAG 2.1 AA: 4.5:1 for text, 3:1 for large text, UI components and focus indicators.
-// "primary button text" and "ribbon text" below are normal-size text held to the 3:1 level, not 4.5:1:
-// they sit on decorative pixel-art surfaces (the brown and ribbon tile fills), and the tile fill caps the
-// achievable ratio (white on the ribbon fill caps at 3.32:1), so they are held to the 3:1 large-text/UI-component
-// level instead.
+// "primary button text", "danger button text" and "banner text" are normal-size text held to the 3:1 level, not
+// 4.5:1: they sit on the pack's saturated brown and red fills, which cap the achievable ratio (cream on the banner
+// fill caps at 3.32:1), so they are held to the 3:1 large-text/UI-component level instead.
+// "handle tag" in dark is held to 3:1 too: the #tag is the de-emphasised half of a handle whose name carries the
+// identity, and on the dark panel fill only near-white passes 4.5:1, which would erase the contrast with the name.
+// Tiles that are the same in both themes (buttons, inputs, toasts, banners) are checked once, in the light block.
 describe('theme contrast (tokens.css against the Kenney tile fills)', () => {
   it('parses more than a handful of tokens from each theme block', () => {
     expect(Object.keys(light).length).toBeGreaterThan(10);
@@ -60,13 +66,17 @@ describe('theme contrast (tokens.css against the Kenney tile fills)', () => {
     ['focus ring', light.focus, FILLS.panelLight, 3],
     ['cell X mark', light['cell-x'], FILLS.panelLight, 3],
     ['cell O mark', light['cell-o'], FILLS.panelLight, 3],
+    ['link', light.link, FILLS.panelLight, 4.5],
+    ['status dot outline', light['dot-outline'], FILLS.panelLight, 3],
     ['input text', light['input-fg'], FILLS.greyBlue, 4.5],
     ['toast text', light['toast-fg'], FILLS.greyBlue, 4.5],
-    ['badge text', light['badge-fg'], FILLS.greyBlue, 3],
     ['secondary button text', light['btn-secondary-fg'], FILLS.greyBlue, 4.5],
     ['primary button text', light['btn-primary-fg'], FILLS.brown, 3],
-    ['ribbon text', light['ribbon-fg'], FILLS.ribbon, 3],
-    ['danger button text', light['btn-danger-fg'], FILLS.greyBlue, 4.5],
+    ['danger button text', light['btn-danger-fg'], FILLS.red, 3],
+    ['banner text', light['banner-fg'], FILLS.banner, 3],
+    ['handle tag', light.tag, FILLS.panelLight, 4.5],
+    ['handle tag on a title bar', light.tag, darken(FILLS.panelLight, TITLE_BAR_DARKEN), 4.5],
+    ['title bar text', light.fg, darken(FILLS.panelLight, TITLE_BAR_DARKEN), 4.5],
   ])('light: %s', (_name, color, fill, min) => {
     expect(contrast(color, fill)).toBeGreaterThanOrEqual(min);
   });
@@ -78,9 +88,10 @@ describe('theme contrast (tokens.css against the Kenney tile fills)', () => {
     ['focus ring', dark.focus, FILLS.panelDark, 3],
     ['cell X mark', dark['cell-x'], FILLS.panelDark, 3],
     ['cell O mark', dark['cell-o'], FILLS.panelDark, 3],
-    ['toast text', dark['toast-fg'], FILLS.panelDark, 4.5],
-    ['secondary button text', dark['btn-secondary-fg'], FILLS.panelDark, 4.5],
-    ['primary button text', dark['btn-primary-fg'], FILLS.greyBlue, 4.5],
+    ['link', dark.link, FILLS.panelDark, 4.5],
+    ['status dot outline', dark['dot-outline'], FILLS.panelDark, 3],
+    ['handle tag', dark.tag, FILLS.panelDark, 3],
+    ['title bar text', dark.fg, darken(FILLS.panelDark, TITLE_BAR_DARKEN), 4.5],
   ])('dark: %s', (_name, color, fill, min) => {
     expect(contrast(color, fill)).toBeGreaterThanOrEqual(min);
   });

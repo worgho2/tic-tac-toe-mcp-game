@@ -3,9 +3,9 @@
 > Challenge a friend to tic-tac-toe without leaving Claude, ChatGPT or VS Code. No app, no account, no browser tab. The board shows up right in the conversation.
 
 <p align="center">
-  <img src="docs/media/join.png" alt="Join screen: name input and Join Game button on a pixel-art panel" width="30%" />
-  <img src="docs/media/lobby.png" alt="Lobby: online players with Invite buttons, received and sent invites with countdowns" width="30%" />
-  <img src="docs/media/game.png" alt="Game: score header, 3x3 board, confetti and a You win ribbon" width="30%" />
+  <img src="docs/media/join.png" alt="Join screen: a Tic-Tac-Toe window with an About box and a Play box holding the name input and the Join Game button" width="32%" />
+  <img src="docs/media/lobby.png" alt="Lobby: your handle and a Play vs model button in the header, online players with green or yellow status dots and Invite buttons, received and sent invites with countdowns" width="32%" />
+  <img src="docs/media/game.png" alt="Game: a scoreboard with both players, marks and scores, the 3x3 board with confetti and a You win banner" width="32%" />
 </p>
 
 ## What is this?
@@ -37,13 +37,13 @@ https://tic-tac-toe-mcp-game.obfsoft.party/mcp
 
 **3. Pick a name.** Type a display name and join the lobby. Your friend does the same.
 
-**4. Invite and play.** You will see each other listed. One of you hits *Invite*, the other *Accept*. The player who sent the invite is X and goes first. Tap a cell on your turn; the opponent's move shows up within a couple of seconds. Names can repeat: everyone gets a `#1234` tag, so look for the full handle. Invites expire after a minute.
+**4. Invite and play.** You will see each other listed: a green dot means free to play, yellow means already in a match. One of you hits *Invite*, the other accepts with ✓ (✕ declines). The player who sent the invite is X and goes first. Tap a cell on your turn; the opponent's move shows up within a couple of seconds. Names can repeat: everyone gets a `#1234` tag, so look for the full handle. Invites expire after a minute.
 
 **5. Rematch.** When a round ends the next one starts by itself after a moment, with X and O swapped and the score kept. *Back to lobby* ends the match for both of you.
 
 **Play against your assistant.** Alone? Hit *Play vs model* in the lobby. After each of your moves the widget posts a short message in the chat asking the assistant for its move, and the assistant answers by calling the `model_move` tool. The server only checks the rules; how well the assistant plays is entirely up to the model. If it goes quiet, *Ask again* re-sends the request. This needs a client that declares the MCP Apps `message` capability; the button stays hidden elsewhere.
 
-**Done for now?** The × in the corner closes your session for good. Reopening the game in that chat needs a fresh `join_game`, which prevents a stale card from lingering as a second player.
+**Done for now?** The × at the top right of the card closes your session for good. Reopening the game in that chat needs a fresh `join_game`, which prevents a stale card from lingering as a second player.
 
 ```mermaid
 sequenceDiagram

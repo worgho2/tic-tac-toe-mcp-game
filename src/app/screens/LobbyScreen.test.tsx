@@ -1,7 +1,7 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { emptyInvites, players, received, sent, you } from '../fixtures/views';
+import { emptyInvites, meta, players, received, sent, you } from '../fixtures/views';
 import { LobbyScreen } from './LobbyScreen';
 
 type Props = Parameters<typeof LobbyScreen>[0];
@@ -13,11 +13,12 @@ function renderLobby(overrides: Partial<Props> = {}) {
     onDecline: vi.fn(),
     onCancel: vi.fn(),
     onPlayModel: vi.fn(),
+    onClose: vi.fn(),
   };
   render(
     <LobbyScreen
+      meta={meta}
       you={you}
-      onlineCount={4}
       players={players}
       invites={{ sent, received }}
       canPlayModel={false}
@@ -39,8 +40,10 @@ describe('LobbyScreen', () => {
 
   it('lists players with handles and status, and shows who you are', () => {
     renderLobby();
-    expect(screen.getByText(/You are worgho2#1234/)).toBeInTheDocument();
-    expect(screen.getByText(/4 online/)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Lobby' }).querySelector('.you')).toHaveTextContent(
+      'You are worgho2#1234',
+    );
+    expect(screen.getByText('4 players online')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^bob#0042/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^alice#0007/ })).toHaveTextContent('busy');
   });
@@ -99,7 +102,8 @@ describe('LobbyScreen', () => {
   });
 
   it('shows the empty states', () => {
-    renderLobby({ players: [], invites: emptyInvites, onlineCount: 1 });
+    renderLobby({ players: [], invites: emptyInvites, meta: { ...meta, onlineCount: 1 } });
+    expect(screen.getByText('1 player online')).toBeInTheDocument();
     expect(screen.getByText('No one else is online yet')).toBeInTheDocument();
     expect(screen.getAllByText('No invites')).toHaveLength(2);
   });

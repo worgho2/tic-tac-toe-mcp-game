@@ -1,36 +1,45 @@
-/* Palette and tile selection per host theme. Tiles are Kenney "UI Pack - Pixel Adventure" (CC0), 32x32. */
+/* Palette and tile selection per host theme. Every surface is Kenney "UI Pack - Adventure" (CC0), "Double" PNGs
+   drawn at half size (see base.css). contrast.test.ts reads the #rrggbb tokens below; keep it in sync. */
 :root {
   --font: 'Press Start 2P', 'Courier New', monospace;
   --fg: #3a2a1a;
   --muted: #7d6b58;
   --accent: #bd3a32;
   --focus: #b3261e;
+  --link: #2a6fae;
   --cell-x: #bd3a32;
   --cell-o: #2a6fae;
-  --ribbon-fg: #fff6e0;
+  --banner-fg: #fff6e0;
   --input-fg: #2c3340;
-  --badge-fg: #2c3340;
   --toast-fg: #2c3340;
-  --shadow: rgba(0, 0, 0, 0.35);
   --btn-primary-fg: #fff6e0;
   --btn-secondary-fg: #2c3340;
-  --btn-danger-fg: #2c3340;
-  --tile-panel: url('../assets/kenney/tile_0000.png');
-  --tile-card: url('../assets/kenney/tile_0013.png');
-  --tile-btn-primary: url('../assets/kenney/tile_0001.png');
-  --tile-btn-primary-pressed: url('../assets/kenney/tile_0014.png');
-  --tile-btn-secondary: url('../assets/kenney/tile_0002.png');
-  --tile-btn-secondary-pressed: url('../assets/kenney/tile_0015.png');
-  --tile-btn-danger: url('../assets/kenney/tile_0069.png');
-  --tile-input: url('../assets/kenney/tile_0002.png');
-  --tile-cell: url('../assets/kenney/tile_0000.png');
-  --tile-cell-hover: url('../assets/kenney/tile_0007.png');
-  --tile-badge-idle: url('../assets/kenney/tile_0034.png');
-  --tile-badge-busy: url('../assets/kenney/tile_0033.png');
-  --tile-toast: url('../assets/kenney/tile_0002.png');
-  --tile-ribbon-l: url('../assets/kenney/tile_0043.png');
-  --tile-ribbon-m: url('../assets/kenney/tile_0044.png');
-  --tile-ribbon-r: url('../assets/kenney/tile_0045.png');
+  --btn-danger-fg: #fff6e0;
+  --tag: #6b5a48;
+  --dot-idle: #7bc96f;
+  --dot-busy: #f2c14e;
+  --dot-outline: #515f6b;
+  --shadow: rgba(0, 0, 0, 0.35);
+  --window-divider: rgba(109, 75, 39, 0.35);
+
+  /* Surfaces */
+  --tile-window: url('../assets/kenney-adventure/panel_brown_corners_a.png');
+  --tile-inset: url('../assets/kenney-adventure/panel_brown.png');
+  --tile-cell: url('../assets/kenney-adventure/panel_brown.png');
+  --tile-btn-primary: url('../assets/kenney-adventure/panel_brown_dark.png');
+  --tile-btn-secondary: url('../assets/kenney-adventure/panel_grey.png');
+  /* panel_red_dark: panel_brown_dark recoloured to the pack's button_red reds (fill #cf5e53). */
+  --tile-btn-danger: url('../assets/kenney-adventure/panel_red_dark.png');
+  --tile-input: url('../assets/kenney-adventure/panel_grey_blue.png');
+  --tile-toast: url('../assets/kenney-adventure/panel_grey.png');
+  --tile-scroll-thumb: url('../assets/kenney-adventure/scrollbar_brown_small.png');
+  /* 20% black diagonal stripes behind box titles; darkens either theme's panel. */
+  --pattern-title: url('../assets/kenney-adventure/pattern_diagonal_transparent_small.png');
+
+  /* Window banner: banner_classic_curtain split into left cap, middle and right cap (128px caps, 256px middle). */
+  --tile-banner-l: url('../assets/kenney-adventure/banner_left.png');
+  --tile-banner-m: url('../assets/kenney-adventure/banner_middle.png');
+  --tile-banner-r: url('../assets/kenney-adventure/banner_right.png');
 }
 
 :root[data-theme='dark'] {
@@ -38,19 +47,15 @@
   --muted: #fbfcfe;
   --accent: #ffb3ac;
   --focus: #ffe08a;
+  --link: #ffffff;
+  --tag: #d3dce4;
   --cell-x: #ffc9c4;
   --cell-o: #a8dcff;
-  --toast-fg: #ffffff;
+  --dot-outline: #1a1f28;
   --shadow: rgba(0, 0, 0, 0.6);
-  --btn-primary-fg: #2c3340;
-  --btn-secondary-fg: #ffffff;
-  --tile-panel: url('../assets/kenney/tile_0003.png');
-  --tile-card: url('../assets/kenney/tile_0016.png');
-  --tile-btn-primary: url('../assets/kenney/tile_0002.png');
-  --tile-btn-primary-pressed: url('../assets/kenney/tile_0015.png');
-  --tile-btn-secondary: url('../assets/kenney/tile_0008.png');
-  --tile-btn-secondary-pressed: url('../assets/kenney/tile_0009.png');
-  --tile-cell: url('../assets/kenney/tile_0003.png');
-  --tile-cell-hover: url('../assets/kenney/tile_0009.png');
-  --tile-toast: url('../assets/kenney/tile_0003.png');
+  --window-divider: rgba(0, 0, 0, 0.3);
+  --tile-window: url('../assets/kenney-adventure/panel_grey_bolts_dark.png');
+  --tile-inset: url('../assets/kenney-adventure/panel_grey_dark.png');
+  --tile-cell: url('../assets/kenney-adventure/panel_grey_dark.png');
+  --tile-scroll-thumb: url('../assets/kenney-adventure/scrollbar_grey_small.png');
 }

@@ -13,8 +13,15 @@ const withTheme: Decorator = (Story, context) => {
   return <Story />;
 };
 
+// The widget's #root caps it at 720px (base.css); Storybook renders into its own root, so apply the same cap.
+const withWidgetWidth: Decorator = (Story) => (
+  <div style={{ maxWidth: 720, margin: '0 auto' }}>
+    <Story />
+  </div>
+);
+
 const preview: Preview = {
-  decorators: [withTheme],
+  decorators: [withTheme, withWidgetWidth],
   globalTypes: {
     theme: {
       description: 'Host theme',

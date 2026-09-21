@@ -1,6 +1,5 @@
 import { useApp } from '@modelcontextprotocol/ext-apps/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import pkg from '../../package.json';
 import { useHostTheme } from './hooks/useHostTheme';
 import { useModelTurn } from './hooks/useModelTurn';
 import { usePollView } from './hooks/usePollView';
@@ -11,7 +10,6 @@ import { ClosedScreen } from './screens/ClosedScreen';
 import { GameScreen } from './screens/GameScreen';
 import { JoinScreen } from './screens/JoinScreen';
 import { LobbyScreen } from './screens/LobbyScreen';
-import { CloseButton } from './ui/CloseButton';
 import { ToastStack } from './ui/Toast';
 
 /** An error that only restates an event delivered in the same reply (the opponent left, so the move failed). */
@@ -52,7 +50,7 @@ export function TicTacToeApp() {
   );
 
   const { app, error } = useApp({
-    appInfo: { name: 'Tic-Tac-Toe', version: pkg.version },
+    appInfo: { name: 'Tic-Tac-Toe', version: __APP_VERSION__ },
     capabilities: {},
     onAppCreated: (created) => {
       created.ontoolresult = (result) => ingest(result.structuredContent ?? parseTextBlock(result.content));
@@ -87,6 +85,12 @@ export function TicTacToeApp() {
     [app, playerId, ingest],
   );
 
+  // Hosts sandbox the iframe; ask the host to open the URL when it can, else try a new tab.
+  const openLink = (url: string) => {
+    if (app?.getHostCapabilities()?.openLinks) app.openLink({ url }).catch(console.error);
+    else window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   if (error) {
     return (
       <p className="error">
@@ -97,20 +101,20 @@ export function TicTacToeApp() {
   if (!app) return <p className="muted">Connecting…</p>;
   if (!view) return <p className="muted">Loading…</p>;
 
+  const meta = { version: __APP_VERSION__, onlineCount: view.onlineCount, onOpenLink: openLink };
+  const close = () => call('close_session', {});
+
   return (
     <main>
       <ToastStack toasts={toasts} onDismiss={dismiss} />
-      {view.phase !== 'closed' && (
-        <CloseButton inMatch={view.phase === 'game'} onClose={() => call('close_session', {})} />
-      )}
-      {view.phase === 'closed' && <ClosedScreen />}
+      {view.phase === 'closed' && <ClosedScreen meta={meta} />}
       {view.phase === 'name' && (
-        <JoinScreen onlineCount={view.onlineCount} error={view.error} onSubmit={(name) => call('set_name', { name })} />
+        <JoinScreen meta={meta} error={view.error} onSubmit={(name) => call('set_name', { name })} onClose={close} />
       )}
       {view.phase === 'lobby' && (
         <LobbyScreen
+          meta={meta}
           you={view.you}
-          onlineCount={view.onlineCount}
           players={view.players}
           invites={view.invites}
           onInvite={(targetId) => call('invite', { targetId })}
@@ -119,14 +123,17 @@ export function TicTacToeApp() {
           onCancel={(inviteId) => call('cancel_invite', { inviteId })}
           canPlayModel={canPlayModel}
           onPlayModel={() => call('play_vs_model', {})}
+          onClose={close}
         />
       )}
       {view.phase === 'game' && view.game && (
         <GameScreen
+          meta={meta}
           you={view.you}
           game={view.game}
           onMove={(cell) => call('make_move', { cell })}
           onLeave={() => call('leave', {})}
+          onClose={close}
           modelTurn={view.game.opponentKind === 'model' ? { stale, onResend: resend } : undefined}
         />
       )}

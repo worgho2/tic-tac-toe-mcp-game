@@ -23,6 +23,10 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
 # build: bundle the widget (vite, single HTML file) and compile the server (tsc)
 # ---------------------------------------------------------------------------
 FROM deps AS build
+# Release builds pass the tag's version (release.yml); vite.config.ts bakes it into the widget, falling back to
+# package.json when empty (local and CI builds).
+ARG APP_VERSION=""
+ENV APP_VERSION=$APP_VERSION
 COPY tsconfig.json tsconfig.server.json vite.config.ts mcp-app.html ./
 COPY src ./src
 RUN pnpm build
@@ -39,7 +43,8 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
 # runtime: non-root, only what `node dist/server/main.js` needs
 # ---------------------------------------------------------------------------
 FROM node:24-alpine AS runtime
-ARG APP_VERSION=0.0.0
+# Same version the widget was built with; the server reports it as its MCP serverInfo.version (empty = package.json).
+ARG APP_VERSION=
 ENV NODE_ENV=production \
     APP_VERSION=$APP_VERSION \
     PORT=8765

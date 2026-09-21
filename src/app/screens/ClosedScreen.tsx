@@ -1,12 +1,18 @@
-import { Panel } from '../ui/Panel';
-import { Ribbon } from '../ui/Ribbon';
+import { Box } from '../ui/Box';
+import { ScreenFrame, type ScreenMeta } from './ScreenFrame';
 
 /** Terminal screen: the id was closed on the server and this widget will not be revived. */
-export function ClosedScreen() {
+export function ClosedScreen({ meta }: { meta: ScreenMeta }) {
   return (
-    <Panel className="closed">
-      <Ribbon>Session closed</Ribbon>
-      <p className="muted">Ask the assistant to open the game again to play.</p>
-    </Panel>
+    <ScreenFrame
+      className="closed"
+      title="Session closed"
+      header={<p className="muted">Thanks for playing</p>}
+      meta={meta}
+    >
+      <Box className="closed__body">
+        <p className="muted">Ask the assistant to open the game again to play.</p>
+      </Box>
+    </ScreenFrame>
   );
 }

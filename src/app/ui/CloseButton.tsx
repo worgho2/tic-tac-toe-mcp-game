@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { Button } from './Button';
+import { Icon } from './Icon';
 import { Modal } from './Modal';
 
 interface Props {
+  /** Extra classes for layout hooks. */
+  className?: string;
   /** Adds the opponent warning to the confirmation. */
   inMatch: boolean;
   onClose: () => void;
 }
 
 /** Corner "X" that ends the session for good, behind an in-widget confirmation. */
-export function CloseButton({ inMatch, onClose }: Props) {
+export function CloseButton({ className = '', inMatch, onClose }: Props) {
   const [open, setOpen] = useState(false);
 
   const confirm = () => {
@@ -19,8 +22,13 @@ export function CloseButton({ inMatch, onClose }: Props) {
 
   return (
     <>
-      <Button variant="secondary" className="close" aria-label="Close session" onClick={() => setOpen(true)}>
-        ×
+      <Button
+        variant="secondary"
+        className={`close ${className}`.trim()}
+        aria-label="Close session"
+        onClick={() => setOpen(true)}
+      >
+        <Icon name="cross" />
       </Button>
       {open && (
         <Modal
