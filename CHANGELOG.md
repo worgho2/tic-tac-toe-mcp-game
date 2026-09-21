@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/worgho2/tic-tac-toe-mcp-game/compare/v0.4.0...v0.5.0) (2026-09-21)
+
+
+### Features
+
+* **server:** serve the Storybook component gallery at / ([#16](https://github.com/worgho2/tic-tac-toe-mcp-game/issues/16)) ([28c1162](https://github.com/worgho2/tic-tac-toe-mcp-game/commit/28c1162a2866aa7c88cd87f2fa2ba0f761c36feb))
+
 ## [0.4.0](https://github.com/worgho2/tic-tac-toe-mcp-game/compare/v0.3.0...v0.4.0) (2026-09-21)
 
 
