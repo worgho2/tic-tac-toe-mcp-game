@@ -78,7 +78,7 @@ The server is published as a Docker image on every release, for both x86-64 and 
 docker run --rm -p 8765:8765 ghcr.io/worgho2/tic-tac-toe-mcp-game:latest
 ```
 
-Then point your client to `http://localhost:8765/mcp`. Both players need to reach the same server, so expose it (for example with a Cloudflare tunnel) if your friend is not on your network.
+Then point your client to `http://localhost:8765/mcp`. Opening `http://localhost:8765/` in a browser shows the component gallery: every screen and UI piece of the game, in light and dark. Both players need to reach the same server, so expose it (for example with a Cloudflare tunnel) if your friend is not on your network.
 
 To hack on it, see [CONTRIBUTING.md](CONTRIBUTING.md).
 

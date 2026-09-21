@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A two-player tic-tac-toe game rendered as an **MCP App** (`@modelcontextprotocol/ext-apps` 2.0, SEP-1865) inside an AI chat client. One Express server exposes a Streamable HTTP MCP endpoint (`/mcp`) plus a `GET /healthz`, and serves a self-contained React widget as a `ui://` resource. Deployed as a Docker image to GHCR; public instance at `https://tic-tac-toe-mcp-game.obfsoft.party/mcp`.
+A two-player tic-tac-toe game rendered as an **MCP App** (`@modelcontextprotocol/ext-apps` 2.0, SEP-1865) inside an AI chat client. One Express server exposes a Streamable HTTP MCP endpoint (`/mcp`) plus a `GET /healthz`, serves a self-contained React widget as a `ui://` resource, and serves the built Storybook (component gallery) at `/`. Deployed as a Docker image to GHCR; public instance at `https://tic-tac-toe-mcp-game.obfsoft.party/mcp`.
 
 **This is a single package at the repo root.** Ignore the "npm workspaces" wording in the scaffold commit message: `pnpm-workspace.yaml` only carries pnpm settings (`engineStrict`, `onlyBuiltDependencies`) and declares no workspace globs. There is no `packages/` or `apps/` directory.
 
@@ -46,9 +46,9 @@ Two trees under `src/`, built by different toolchains:
 
 ### Server request model
 
-`main.ts` creates a **fresh `McpServer` and transport per HTTP request** (stateless Streamable HTTP, `sessionIdGenerator: undefined`). Therefore all game state lives outside the server object: `server.ts` holds a module-scope `sharedLobby`. This makes the deployment **single replica by design**; horizontal scaling, persistence and auth are explicitly out of scope. `createServer({ lobby, readHtml })` accepts injectable overrides purely for tests.
+`http.ts` (`createHttpApp`, used by `main.ts`) creates a **fresh `McpServer` and transport per HTTP request** (stateless Streamable HTTP, `sessionIdGenerator: undefined`). Therefore all game state lives outside the server object: `server.ts` holds a module-scope `sharedLobby`. This makes the deployment **single replica by design**; horizontal scaling, persistence and auth are explicitly out of scope. `createServer({ lobby, readHtml })` accepts injectable overrides purely for tests.
 
-`main.ts` binds `createMcpExpressApp({ host: '0.0.0.0' })`, which disables the SDK's localhost DNS-rebinding guard; that is wanted because the server sits behind a reverse proxy.
+`http.ts` binds `createMcpExpressApp({ host: '0.0.0.0' })`, which disables the SDK's localhost DNS-rebinding guard; that is wanted because the server sits behind a reverse proxy. After `/healthz` and `/mcp` it serves `storybook-static/` (repo root, or next to `dist/` in the image) with `express.static`, so `/` is the component gallery; without a Storybook build, `/` is a small HTML landing page that points to `/mcp`. `http.test.ts` covers the three routes on an ephemeral port. The Dockerfile builds Storybook in the build stage (both build stages run on `$BUILDPLATFORM`, since their output is platform-independent) and copies it into the runtime image.
 
 ### Tool surface
 
